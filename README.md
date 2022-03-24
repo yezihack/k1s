@@ -6,19 +6,19 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 
 ## 功能
 
-- 部署应用资源
-- 重新部署应用资源
-- 查看 deploy 资源应用列表
-- 查看 pod 资源列表
-- 查看 service 资源列表
-- 查看 deploy 资源详情
-- 查看 pod 资源详情
-- 进入 pod 容器
-- 自动进入 pod 容器
-- 查看 pod 日志
-- 监听 pod 日志
-- 查看 deploy, servier, pod 三种资源
-- 导出 Deploy YAML
+- 部署应用资源（apply）
+- 重新部署应用资源（reapply）
+- 查看 deploy 资源应用列表（deploy）
+- 查看 pod 资源列表（pod）
+- 查看 service 资源列表（svc）
+- 查看 deploy 资源详情（desc-deploy）
+- 查看 pod 资源详情（desc-pod）
+- 进入 pod 容器（exec-pod）
+- 自动进入 pod 容器（auto-pod）
+- 查看 pod 日志（logs-pod）
+- 监听 pod 日志（logsf-pod）
+- 查看 deploy, servier, pod 三种资源（all）
+- 导出 Deploy YAML（ex-deploy）
 
 ## 安装
 
@@ -53,6 +53,8 @@ k1s [操作类型] [资源名称]
 ### 使用实例
 
 假设需要部署的应用名称: nginx-test.yaml  
+
+tip: apply, reapply 要求应用名称与文件名同名，方便操作识别。
 
 - 设置环境变量
 
