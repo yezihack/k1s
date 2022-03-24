@@ -1,0 +1,402 @@
+#!/usr/bin/env bash
+############################
+# k8s 工具集
+############################
+
+############参数###########
+# 动作名称
+action=$1
+
+# 参数1
+param01=$2
+
+# 命名空间
+nameSpace=${K1S_NS}
+
+# 存储yaml路径,带 / 结尾
+savePath=${K1S_PATH}
+
+###########################
+
+############内置函数#############
+help() {
+    scriptName=$0
+    scriptName=$(basename "${scriptName}")
+    cat <<EOF
+____ ____ ____                                                  
+||k |||1 |||s ||       
+||__|||__|||__||     
+|/__\|/__\|/__\|    
+
+    1. 部署: ${scriptName} apply {应用名称}
+    2. 重新部署: ${scriptName} reapply {应用名称}
+    3. 查看 deploy 列表: ${scriptName} deploy {应用名称}
+    4. 查看 pod 列表: ${scriptName} pod {应用名称}
+    5. 查看 service 列表: ${scriptName} svc {应用名称}    
+    6. 查看 deploy 详情: ${scriptName} desc-doploy {应用名称}    
+    7. 查看 pod 详情: ${scriptName} desc-pod {应用名称}    
+    8. 进入 pod 容器: ${scriptName} exec-pod {POD名称}    
+    9. 自动进入 pod 容器: ${scriptName} auto-pod {应用名称}    
+    10. 查看 pod 日志: ${scriptName} logs-pod {POD名称}    
+    11. 监听 pod 日志: ${scriptName} logsf-pod {POD名称}    
+    12. 查看 all: ${scriptName} all {应用名称}
+    13. 导出 Deploy YAML: ${scriptName} ex-deploy {应用名称}
+    0. 查看帮助：${scriptName} help
+tip:
+    1. 设置YAML路径的环境变量方式：export NS_K1S=/opt/test/ (必须/结尾)
+    2. 设置命名空间的环境变量方式：export PATH_K1S=dev
+current:
+    1. 当前操作的路径：${savePath}
+    2. 当前操作的空间名：${nameSpace}
+EOF
+}
+tip() {
+    cat << EOF
+    1. 当前操作的路径：${savePath}
+    2. 当前操作的空间名：${nameSpace}
+EOF
+}
+
+# 判断结果状态
+alert() {
+    local val=$1
+    if [ $? -eq 0 ];then     
+        echo -e "\033[32m ${val} 成功 \033[0m"
+    else
+        echo -e "\033[31m ${val} 失败 \033[0m"
+    fi
+}
+# 提示
+green() {
+    local val=$1
+    echo -e "\033[32m ${val} \033[0m"
+}
+# 禁止
+red() {
+    local val=$1
+    echo -e "\033[31m ${val} \033[0m"
+}
+# 警告
+yello() {
+    local val=$1
+    echo -e "\033[33m ${val} \033[0m"
+}
+# 是否继续函数
+IsContinue() {
+    local msg=$1
+    while true
+    do
+        read -p "${msg}" ok
+        case "${ok}" in 
+            [Yy])
+                break
+            ;;
+            [Nn])
+                echo "安全退出"
+                exit 0
+            ;;
+        esac
+    done
+}
+
+# 用于YES还是NO，YES返回0，NO返回1
+IsYesNo() {
+    local msg=$1
+    while true
+    do
+        read -p "${msg}" ok
+        case "${ok}" in 
+            [Yy])
+                return 0
+            ;;
+            [Nn])
+                return 1
+            ;;
+        esac
+    done
+}
+
+#########################
+check() {
+     # 0. 检查
+    ## 检查设置路径
+    if [ -z "${savePath}" ]; then 
+        red "请设置的YAML路径的环境变量！"
+        exit 1
+    fi 
+
+    ## 路径是否有效
+    if [ ! -d "${savePath}" ]; then 
+        red "${savePath} 路径不存在，请检查"
+        exit 1
+    fi 
+
+    green "当前设置的YAML路径: ${savePath}"
+
+    ## 检查输入参数
+    if [ -z "${param01}" ]; then 
+        red "请输入您的应用名称！"
+        exit 1
+    fi 
+
+    ## 检查应用文件是否存在
+    fullFile="${savePath}${param01}.yaml"
+    if [ ! -f "${fullFile}" ];then
+        red "${fullFile} 文件不存在，请检查"
+        exit 1
+    fi 
+}
+# 新部署
+apply() {
+    yello "############ 正在操作新部署 ###############"
+    tip
+    check
+
+    kubectl get -f "${fullFile}" &> /dev/null
+    if [ $? -eq 0 ]; then
+        red "${param01} 不是新应用，请检查后使用 reapply 方式部署。"
+        exit 1
+    fi 
+
+    IsContinue "是否准备好新应用部署：${param01}(Y/N):"
+
+    # 模拟运行是否可行
+    kubectl apply -f "${fullFile}" --server-dry-run
+    alert "模拟运行"
+
+    # 真实运行
+    IsContinue "您正在准备运行部署应用名为:${param01},是否确认(Y/N):"
+    kubectl apply -f "${fullFile}"
+
+     # 5. 观察应用状态
+    kubectl get -f "${fullFile}"
+
+    # 6. 查看应用详情
+    IsContinue "是否查看应用:${param01} 的部署详情(Y/N):"
+    kubectl describe -f "${fullFile}"
+}
+# 重新部署
+reapply() {    
+    yello "############ 正在操作重新部署 ###############"
+    tip
+    check
+
+    kubectl get -f "${fullFile}" &> /dev/null
+    if [ $? -eq 1 ]; then
+        red "${param01} 是新应用，请检查后使用 apply 方式部署。"
+        exit 1
+    fi 
+
+    IsContinue "是否准备好重新部署应用：${param01}(Y/N):"
+
+    # 1. 查看应用
+    kubectl get -f "${fullFile}"
+
+    # 2. 对比应用变化
+    kubectl diff -f "${fullFile}"
+    IsContinue "请仔细观察应用的差异，然后决定是否继续(Y/N):"
+
+    # 3. 模拟运行是否可行
+    kubectl apply -f "${fullFile}" --server-dry-run
+    alert "模拟运行"
+
+    # 4. 真实运行
+    IsContinue "您正在准备运行部署应用名为:${param01},是否确认(Y/N):"
+    kubectl apply -f "${fullFile}"
+
+    # 5. 观察应用状态
+    kubectl get -f "${fullFile}" -o wide
+
+    # 6. 查看应用详情
+    IsContinue "是否查看应用:${param01} 的部署详情(Y/N):"
+    kubectl describe -f "${fullFile}"
+}
+# 获取应用时的检查
+checkns() {
+    # 检查命名空间
+    if [ -z "${nameSpace}" ];then 
+        red "请设置命名空间环境变量, 查看帮助:help"
+    fi
+}
+getcheck() {
+     ## 检查输入参数
+    if [ -z "${param01}" ]; then 
+        red "请输入您的应用名称！"
+        exit 1
+    fi 
+   checkns
+}
+# 查看 deploy
+deploy() {
+    yello "############ 查看 deploy ###############"
+    tip
+    checkns
+    kubectl get deploy -n "${nameSpace}" ${param01}
+}
+# 查看 pods
+pod() {
+    yello "############ 查看 pod ###############"
+    tip
+    checkns
+    if [ -z ${param01} ];then 
+        kubectl get pods -n "${nameSpace}" ${param01}
+    else 
+        kubectl get pods -n "${nameSpace}" -o wide |grep ${param01}
+    fi
+    
+}
+# 查看 service
+svc() {
+    yello "############ 查看 service ###############"
+    tip
+    checkns
+    kubectl get svc -n "${nameSpace}" ${param01}
+}
+# 详情查看 deploy
+descDeploy() {
+    yello "############ 查看 deploy 详情 ###############"
+    tip
+    getcheck
+    kubectl describe deploy -n "${nameSpace}" "${param01}"
+}
+# 详情查看pods
+descPod() {
+    yello "############ 查看 pod 详情 ###############"
+    tip
+    getcheck
+    kubectl describe pod -n "${nameSpace}" "${param01}"
+}
+# 进入容器
+execPod() {
+    yello "############ 进入 ${param01} pod 容器 ###############"
+    tip
+    getcheck
+    kubectl exec -it -n "${nameSpace}" "${param01}" bash
+}
+
+# 自动进入容器
+autoExecPod() {
+    yello "############ 进入 ${param01} pod 容器 ###############"
+    tip
+    getcheck
+    # 从名称中自动获取 pod 名称
+    podsName=$(kubectl get pods -n "${nameSpace}" |grep "${param01}"|awk '{print $1}')
+    if [ -z "${podsName}" ];then 
+        red "获取 POD 名称失败，请检查或使用 exec-pod 方式。"
+        exit 1
+    fi 
+    green "自动获取第一个POD名称：${podsName}"
+    kubectl exec -it -n "${nameSpace}" "${podsName}" bash
+}
+# 查看pod 日志
+logsPod() {
+    yello "############ 查看 ${param01} pod 日志 ###############"
+    tip
+    getcheck
+    kubectl logs -n "${nameSpace}" "${param01}"
+}
+# 动态查看日志
+logsFpod() {
+    yello "############ 动态监听 ${param01} pod 日志 ###############"
+    tip
+    getcheck
+    kubectl logs -f -n "${nameSpace}" "${param01}"
+}
+# 导出 Deploy YAML
+exportDeploy() {
+    tip
+    checkns
+    if [ -n "${param01}" ];then 
+        yello "############ 导出应用 DEPLOY ${param01} ###############"
+        # 判断应用是否存在
+        count=$(kubectl get deploy -n "${nameSpace}"|grep "${param01}"|wc -l)
+        if [ "${count}" -eq 0 ];then 
+            red "${param01} 应用不存在，请检查！"
+            exit 0
+        fi 
+        # 判断应用文件是否存在
+        deployFile="${param01}.yaml"
+        if [ -d "${savePath}" ];then
+            deployFile="${savePath}${param01}.yaml"
+        fi  
+        if [ -f "${deployFile}" ]; then 
+            IsContinue "${deployFile} 文件存在，是否需要覆盖(Y/N):"
+        fi 
+        # 导出文件
+        kubectl get deploy -n "${nameSpace}" "${param01}" -o yaml > "${deployFile}"
+        alert "${deployFile} 应用导出"
+        exit 0
+    fi 
+
+    yello "############ 导出应用 DEPLOY (Many)  ###############"
+    # 获取应用列表
+    for deployName in $(kubectl get deploy -n "${nameSpace}" |awk '{print $1}'|sed '1d')
+    do 
+        yello "正在导出 ${deployName} 应用..."
+        deployFile="${deployName}.yaml"
+        if [ -d "${savePath}" ];then
+            deployFile="${savePath}${deployName}.yaml"
+        fi  
+        # 判断应用文件是否曾导出过
+        if [ -f "${deployFile}" ]; then 
+            IsYesNo "${deployFile} 文件存在，是否需要覆盖(Y/N):"
+            if [ $? -eq 1 ]; then 
+                yello "${deployFile} 跳过不重新生成"
+                continue
+            fi 
+        fi 
+        # 导出操作
+        kubectl get deploy -n "${nameSpace}" "${deployName}" -o yaml > "${deployFile}"
+        alert "导出"
+    done 
+}
+
+## 分类操作
+
+case "X${action}" 
+in
+    "Xapply")
+        apply
+    ;;
+    "Xreapply")
+        reapply
+    ;;
+    "Xdeploy")
+        deploy
+    ;;
+    "Xpod")
+        pod
+    ;;
+    "Xsvc")
+        svc
+    ;;
+    "Xdesc-deploy")
+        descDeploy
+    ;;
+    "Xdesc-pod")
+        descPod
+    ;;
+    "Xexec-pod")
+        execPod
+    ;; 
+    "Xauto-pod")
+        autoExecPod
+    ;;
+    Xlogs-pod)
+        logsPod
+    ;;
+    "Xlogsf-pod")
+        logsFpod
+    ;;
+    "Xall")
+        deploy
+        pod
+        svc
+    ;;
+    "Xex-deploy")
+        exportDeploy
+    ;;
+    *)
+        help
+    ;;
+esac
