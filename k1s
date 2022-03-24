@@ -19,43 +19,7 @@ savePath=${K1S_PATH}
 ###########################
 
 ############内置函数#############
-help() {
-    scriptName=$0
-    scriptName=$(basename "${scriptName}")
-    cat <<EOF
-____ ____ ____                                                  
-||k |||1 |||s ||       
-||__|||__|||__||     
-|/__\|/__\|/__\|    
 
-    1. 部署: ${scriptName} apply {应用名称}
-    2. 重新部署: ${scriptName} reapply {应用名称}
-    3. 查看 deploy 列表: ${scriptName} deploy {应用名称}
-    4. 查看 pod 列表: ${scriptName} pod {应用名称}
-    5. 查看 service 列表: ${scriptName} svc {应用名称}    
-    6. 查看 deploy 详情: ${scriptName} desc-doploy {应用名称}    
-    7. 查看 pod 详情: ${scriptName} desc-pod {应用名称}    
-    8. 进入 pod 容器: ${scriptName} exec-pod {POD名称}    
-    9. 自动进入 pod 容器: ${scriptName} auto-pod {应用名称}    
-    10. 查看 pod 日志: ${scriptName} logs-pod {POD名称}    
-    11. 监听 pod 日志: ${scriptName} logsf-pod {POD名称}    
-    12. 查看 all: ${scriptName} all {应用名称}
-    13. 导出 Deploy YAML: ${scriptName} ex-deploy {应用名称}
-    0. 查看帮助：${scriptName} help
-tip:
-    1. 设置YAML路径的环境变量方式：export NS_K1S=/opt/test/ (必须/结尾)
-    2. 设置命名空间的环境变量方式：export PATH_K1S=dev
-current:
-    1. 当前操作的路径：${savePath}
-    2. 当前操作的空间名：${nameSpace}
-EOF
-}
-tip() {
-    cat << EOF
-    1. 当前操作的路径：${savePath}
-    2. 当前操作的空间名：${nameSpace}
-EOF
-}
 
 # 判断结果状态
 alert() {
@@ -81,6 +45,63 @@ yello() {
     local val=$1
     echo -e "\033[33m ${val} \033[0m"
 }
+
+blue() {
+    local val=$1
+    echo -e "\033[34m ${val} \033[0m"
+}
+
+
+help() {
+    scriptName=$0
+    scriptName=$(basename "${scriptName}")
+    local tools=(
+"1. 部署: ${scriptName} apply {资源名称}"
+"2. 重新部署: ${scriptName} reapply {资源名称}"
+"3. 查看 deploy 列表: ${scriptName} deploy {资源名称}"
+"4. 查看 pod 列表: ${scriptName} pod {资源名称}"
+"5. 查看 service 列表: ${scriptName} svc {资源名称}"    
+"6. 查看 deploy 详情: ${scriptName} desc-doploy {资源名称}"
+"7. 查看 pod 详情: ${scriptName} desc-pod {资源名称}"
+"8. 进入 pod 容器: ${scriptName} exec-pod {POD名称}"  
+"9. 自动进入 pod 容器: ${scriptName} auto-pod {资源名称}"    
+"10. 查看 pod 日志: ${scriptName} logs-pod {POD名称}"    
+"11. 监听 pod 日志: ${scriptName} logsf-pod {POD名称}"    
+"12. 查看 all: ${scriptName} all {资源名称}"
+"13. 导出 Deploy YAML: ${scriptName} ex-deploy {资源名称}"
+"help. 查看帮助：${scriptName} help"
+)
+    local tips=(
+"1. 设置YAML路径的环境变量方式：export NS_K1S=/home/test/ (必须/结尾)"
+"2. 设置命名空间的环境变量方式：export PATH_K1S=dev"
+    )
+    local envs=(
+"1. 当前操作的路径：${savePath}"
+"2. 当前操作的空间名：${nameSpace}"
+    )
+    cat <<EOF
+____ ____ ____                                                  
+||k |||1 |||s ||       
+||__|||__|||__||     
+|/__\|/__\|/__\|   by 百里(github.com/yezihack) 
+
+EOF
+    for name in "${tools[@]}"
+    do 
+        blue "${name}"
+    done
+    echo "TIP:"
+    for name in "${tips[@]}"
+    do 
+        green "${name}"
+    done
+    echo "CURRENT:"
+    for name in "${envs[@]}"
+    do 
+        yello "${name}"
+    done
+}
+
 # 是否继续函数
 IsContinue() {
     local msg=$1
