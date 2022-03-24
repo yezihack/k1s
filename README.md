@@ -1,5 +1,16 @@
 # k1s: kubernetes 快捷操作的辅助工具
 
+```text
+     __    ____        
+|  | _/_   | ______
+|  |/ /|   |/  ___/
+|    < |   |\___ \ 
+|__|_ \|___/____  >
+     \/         \/  by 百里(github.com/yezihack)
+```
+
+![](asset/k1s.gif)
+
 ## 什么是k1s
 
 k1s 主要是用于 kubernetes 管理的命令行工具。

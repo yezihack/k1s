@@ -72,18 +72,20 @@ help() {
 "help. 查看帮助：${scriptName} help"
 )
     local tips=(
-"1. 设置YAML路径的环境变量方式：export NS_K1S=/home/test/ (必须/结尾)"
-"2. 设置命名空间的环境变量方式：export PATH_K1S=dev"
+"1. 设置YAML路径的环境变量方式：export K1S_NS=/home/test/ (必须/结尾)"
+"2. 设置命名空间的环境变量方式：export K1S_PATH=dev"
     )
     local envs=(
 "1. 当前操作的路径：${savePath}"
 "2. 当前操作的空间名：${nameSpace}"
     )
     cat <<EOF
-____ ____ ____                                                  
-||k |||1 |||s ||       
-||__|||__|||__||     
-|/__\|/__\|/__\|   by 百里(github.com/yezihack) 
+     __    ____        
+|  | _/_   | ______
+|  |/ /|   |/  ___/
+|    < |   |\___ \ 
+|__|_ \|___/____  >
+     \/         \/  by 百里(github.com/yezihack)
 
 EOF
     for name in "${tools[@]}"
@@ -100,6 +102,17 @@ EOF
     do 
         yello "${name}"
     done
+}
+
+tip() {
+    local envs=(
+"1. 当前操作的路径：${savePath}"
+"2. 当前操作的空间名：${nameSpace}"
+    )
+    for name in "${tips[@]}"
+    do 
+        green "${name}"
+    done   
 }
 
 # 是否继续函数
@@ -135,6 +148,16 @@ IsYesNo() {
             ;;
         esac
     done
+}
+
+# 判断当前 kubectl 是否小于1.18版本。返回 1则大于等于1.18，0则小于1.18
+IsGtK8sVersion118() {
+    version=$(kubectl version|sed -r "s/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/g"|sed -n '1p')
+    versionNumber=$(echo "${version}"|sed -r "s/[v\.]//g")
+    if [ "${versionNumber}" -ge 1180 ];then 
+        return 1
+    fi
+    return 0
 }
 
 #########################
@@ -182,7 +205,13 @@ apply() {
     IsContinue "是否准备好新应用部署：${param01}(Y/N):"
 
     # 模拟运行是否可行
-    kubectl apply -f "${fullFile}" --server-dry-run
+    IsGtK8sVersion118
+    if [ $? -eq 1 ]; then 
+        kubectl apply -f "${fullFile}" --dry-run=server
+    else 
+        kubectl apply -f "${fullFile}" --server-dry-run
+    fi 
+    
     alert "模拟运行"
 
     # 真实运行
@@ -218,7 +247,12 @@ reapply() {
     IsContinue "请仔细观察应用的差异，然后决定是否继续(Y/N):"
 
     # 3. 模拟运行是否可行
-    kubectl apply -f "${fullFile}" --server-dry-run
+    IsGtK8sVersion118
+    if [ $? -eq 1 ]; then 
+        kubectl apply -f "${fullFile}" --dry-run=server
+    else 
+        kubectl apply -f "${fullFile}" --server-dry-run
+    fi 
     alert "模拟运行"
 
     # 4. 真实运行
@@ -301,7 +335,7 @@ autoExecPod() {
     tip
     getcheck
     # 从名称中自动获取 pod 名称
-    podsName=$(kubectl get pods -n "${nameSpace}" |grep "${param01}"|awk '{print $1}')
+    podsName=$(kubectl get pods -n "${nameSpace}" |grep "${param01}" |sed -n '1p'|awk '{print $1}')
     if [ -z "${podsName}" ];then 
         red "获取 POD 名称失败，请检查或使用 exec-pod 方式。"
         exit 1
