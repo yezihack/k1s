@@ -62,14 +62,15 @@ help() {
 "4. 查看 deploy 列表: ${scriptName} deploy {资源名称}"
 "5. 查看 pod 列表: ${scriptName} pod {资源名称}"
 "6. 查看 service 列表: ${scriptName} svc {资源名称}"    
-"7. 查看 deploy 详情: ${scriptName} desc-doploy {资源名称}"
-"8. 查看 pod 详情: ${scriptName} desc-pod {资源名称}"
-"9. 进入 pod 容器: ${scriptName} exec {POD名称}"  
-"10. 自动进入 pod 容器: ${scriptName} auto {资源名称}"    
-"11. 查看 pod 日志: ${scriptName} logs {POD名称}"    
-"12. 监听 pod 日志: ${scriptName} logsf {POD名称}"    
-"13. 查看 all: ${scriptName} all {资源名称}"
-"14. 导出 Deploy YAML: ${scriptName} ex-deploy {资源名称}"
+"7. 查看 node 列表: ${scriptName} desc-node {资源名称}"    
+"8. 查看 deploy 详情: ${scriptName} desc-doploy {资源名称}"
+"9. 查看 pod 详情: ${scriptName} desc-pod {资源名称}"
+"10. 进入 pod 容器: ${scriptName} exec {POD名称}"  
+"11. 自动进入 pod 容器: ${scriptName} auto {资源名称}"    
+"12. 查看 pod 日志: ${scriptName} logs {POD名称}"    
+"13. 监听 pod 日志: ${scriptName} logsf {POD名称}"    
+"14. 查看 all: ${scriptName} all {资源名称}"
+"15. 导出 Deploy YAML: ${scriptName} ex-deploy {资源名称}"
 "help. 查看帮助：${scriptName} help"
 )
     local tips=(
@@ -408,12 +409,16 @@ exportDeploy() {
 }
 # 查看 nodes 机器列表
 nodes() {
-    
     if [ -n "${param01}" ];then 
         kubectl get nodes "${param01}"
     else 
         kubectl get nodes
     fi
+}
+
+# 查看 node 详情
+descNode() {
+    kubectl describe nodes "${param01}"
 }
 
 ## 分类操作
@@ -437,6 +442,9 @@ in
     ;;
     "Xsvc")
         svc
+    ;;
+    "Xdesc-node")
+        descNode
     ;;
     "Xdesc-deploy")
         descDeploy
