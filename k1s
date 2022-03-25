@@ -408,7 +408,12 @@ exportDeploy() {
 }
 # 查看 nodes 机器列表
 nodes() {
-    kubectl get nodes ${param01}
+    
+    if [ -n "${param01}" ];then 
+        kubectl get nodes "${param01}"
+    else 
+        kubectl get nodes
+    fi
 }
 
 ## 分类操作
