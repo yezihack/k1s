@@ -28,8 +28,8 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 查看 service 资源列表（svc）
 - 查看 deploy 资源详情（desc-deploy）
 - 查看 pod 资源详情（desc-pod）
-- 进入 pod 容器（exec-pod）
-- 自动进入 pod 容器（auto-pod）
+- 进入 pod 容器（exec）
+- 自动进入 pod 容器（auto）
 - 查看 pod 日志（logs）
 - 监听 pod 日志（logsf）
 - 查看 deploy, servier, pod 三种资源（all）

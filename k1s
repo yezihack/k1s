@@ -64,8 +64,8 @@ help() {
 "6. 查看 service 列表: ${scriptName} svc {资源名称}"    
 "7. 查看 deploy 详情: ${scriptName} desc-doploy {资源名称}"
 "8. 查看 pod 详情: ${scriptName} desc-pod {资源名称}"
-"9. 进入 pod 容器: ${scriptName} exec-pod {POD名称}"  
-"10. 自动进入 pod 容器: ${scriptName} auto-pod {资源名称}"    
+"9. 进入 pod 容器: ${scriptName} exec {POD名称}"  
+"10. 自动进入 pod 容器: ${scriptName} auto {资源名称}"    
 "11. 查看 pod 日志: ${scriptName} logs {POD名称}"    
 "12. 监听 pod 日志: ${scriptName} logsf {POD名称}"    
 "13. 查看 all: ${scriptName} all {资源名称}"
@@ -439,7 +439,7 @@ in
     "Xdesc-pod"|"Xdesc-pods")
         descPod
     ;;
-    'Xexec'|'Xexec')
+    "Xexec")
         execPod
     ;; 
     "Xauto")
