@@ -20,6 +20,7 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 
 ## 功能
 
+- 查看Nodes（nodes）
 - 部署应用资源（apply）
 - 重新部署应用资源（reapply）
 - 查看 deploy 资源应用列表（deploy）
@@ -29,8 +30,8 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 查看 pod 资源详情（desc-pod）
 - 进入 pod 容器（exec-pod）
 - 自动进入 pod 容器（auto-pod）
-- 查看 pod 日志（logs-pod）
-- 监听 pod 日志（logsf-pod）
+- 查看 pod 日志（logs）
+- 监听 pod 日志（logsf）
 - 查看 deploy, servier, pod 三种资源（all）
 - 导出 Deploy YAML（ex-deploy）
 
