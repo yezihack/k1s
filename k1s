@@ -56,21 +56,23 @@ help() {
     scriptName=$0
     scriptName=$(basename "${scriptName}")
     local tools=(
-"1. Nodes: ${scriptName} node"
-"2. 部署: ${scriptName} apply {资源名称}"
-"3. 重新部署: ${scriptName} reapply {资源名称}"
-"4. 查看 deploy 列表: ${scriptName} deploy {资源名称}"
-"5. 查看 pod 列表: ${scriptName} pod {资源名称}"
-"6. 查看 service 列表: ${scriptName} svc {资源名称}"    
-"7. 查看 node 列表: ${scriptName} desc-node {资源名称}"    
-"8. 查看 deploy 详情: ${scriptName} desc-doploy {资源名称}"
-"9. 查看 pod 详情: ${scriptName} desc-pod {资源名称}"
+"01. Nodes: ${scriptName} node"
+"02. 部署: ${scriptName} apply {资源名称}"
+"03. 重新部署: ${scriptName} reapply {资源名称}"
+"04. 查看 deploy 列表: ${scriptName} deploy|deploys {资源名称}"
+"05. 查看 pod 列表: ${scriptName} pod|pods {资源名称}"
+"06. 查看 service 列表: ${scriptName} svc|svcs {资源名称}"    
+"07. 查看 node 列表: ${scriptName} desc-node {资源名称}"    
+"08. 查看 deploy 详情: ${scriptName} desc-doploy {资源名称}"
+"09. 查看 pod 详情: ${scriptName} desc-pod {资源名称}"
 "10. 进入 pod 容器: ${scriptName} exec {POD名称}"  
 "11. 自动进入 pod 容器: ${scriptName} auto {资源名称}"    
 "12. 查看 pod 日志: ${scriptName} logs {POD名称}"    
 "13. 监听 pod 日志: ${scriptName} logsf {POD名称}"    
 "14. 查看 all: ${scriptName} all {资源名称}"
 "15. 导出 Deploy YAML: ${scriptName} ex-deploy {资源名称}"
+"16. 导出 Service YAML: ${scriptName} ex-svc {资源名称}"
+"17. 清理垃圾: ${scriptName} clean {空间名称}"
 "help. 查看帮助：${scriptName} help"
 )
     local tips=(
@@ -246,6 +248,9 @@ reapply() {
 
     # 2. 对比应用变化
     kubectl diff -f "${fullFile}"
+
+    # 2.1 查看 pods 详情
+    kubectl get pods -n "${nameSpace}" -o wide |grep "${param01}"
     IsContinue "请仔细观察应用的差异，然后决定是否继续(Y/N):"
 
     # 3. 模拟运行是否可行
@@ -265,8 +270,17 @@ reapply() {
     kubectl get -f "${fullFile}" -o wide
 
     # 6. 查看应用详情
-    IsContinue "是否查看应用:${param01} 的部署详情(Y/N):"
-    kubectl describe -f "${fullFile}"
+    IsYesNo "是否查看应用:${param01} 的部署详情(Y/N):"
+    if [ $? -eq 0 ]; then 
+        kubectl describe -f "${fullFile}"
+    fi
+
+    # 7. 查看 pods 
+    IsYesNo "是否查看应用:${param01} 的 POD 详情(Y/N):"
+    if [ $? -eq 0 ]; then 
+        kubectl get pods -n "${nameSpace}" -o wide |grep "${param01}"
+    fi
+    
 }
 # 获取应用时的检查
 checkns() {
@@ -290,17 +304,36 @@ deploy() {
     checkns
     kubectl get deploy -n "${nameSpace}" ${param01}
 }
+
+# 查看 deploy
+deploys() {
+    yello "############ 查看 deploy ###############"
+    tip
+    checkns
+    kubectl get deploy -n "${nameSpace}" ${param01} -o wide
+}
+
 # 查看 pods
 pod() {
     yello "############ 查看 pod ###############"
     tip
     checkns
-    if [ -z ${param01} ];then 
-        kubectl get pods -n "${nameSpace}" ${param01}
-    else 
+    if [ -n "${param01}" ];then 
+        kubectl get pods -n "${nameSpace}" |grep ${param01}
+    else
+        kubectl get pods -n "${nameSpace}"        
+    fi    
+}
+# 查看 pods
+pods() {
+    yello "############ 查看 pod ###############"
+    tip
+    checkns
+    if [ -n "${param01}" ];then 
         kubectl get pods -n "${nameSpace}" -o wide |grep ${param01}
-    fi
-    
+    else
+        kubectl get pods -n "${nameSpace}" -o wide        
+    fi    
 }
 # 查看 service
 svc() {
@@ -308,6 +341,14 @@ svc() {
     tip
     checkns
     kubectl get svc -n "${nameSpace}" ${param01}
+}
+
+# 查看 service
+svcs() {
+    yello "############ 查看 service ###############"
+    tip
+    checkns
+    kubectl get svc -n "${nameSpace}" ${param01} -o wide
 }
 # 详情查看 deploy
 descDeploy() {
@@ -407,6 +448,55 @@ exportDeploy() {
         alert "导出"
     done 
 }
+# 导出 service
+exportService() {
+    tip
+    checkns
+    if [ -n "${param01}" ];then 
+        yello "############ 导出应用 SERVICE ${param01} ###############"
+        # 判断应用是否存在
+        count=$(kubectl get svc -n "${nameSpace}"|grep "${param01}"|wc -l)
+        if [ "${count}" -eq 0 ];then 
+            red "${param01} service 不存在，请检查！"
+            exit 0
+        fi 
+        # 判断 svc 文件是否存在
+        svcfile="${param01}-svc.yaml"
+        if [ -d "${savePath}" ];then
+            svcfile="${savePath}${svcfile}"
+        fi  
+        if [ -f "${svcfile}" ]; then 
+            IsContinue "${svcfile} 文件存在，是否需要覆盖(Y/N):"
+        fi 
+        # 导出文件
+        kubectl get deploy -n "${nameSpace}" "${param01}" -o yaml > "${deployFile}"
+        alert "${deployFile} 应用导出"
+        exit 0
+    fi 
+
+    yello "############ 导出应用 DEPLOY (Many)  ###############"
+    # 获取应用列表
+    for deployName in $(kubectl get deploy -n "${nameSpace}" |awk '{print $1}'|sed '1d')
+    do 
+        yello "正在导出 ${deployName} 应用..."
+        deployFile="${deployName}.yaml"
+        if [ -d "${savePath}" ];then
+            deployFile="${savePath}${deployName}.yaml"
+        fi  
+        # 判断应用文件是否曾导出过
+        if [ -f "${deployFile}" ]; then 
+            IsYesNo "${deployFile} 文件存在，是否需要覆盖(Y/N):"
+            if [ $? -eq 1 ]; then 
+                yello "${deployFile} 跳过不重新生成"
+                continue
+            fi 
+        fi 
+        # 导出操作
+        kubectl get deploy -n "${nameSpace}" "${deployName}" -o yaml > "${deployFile}"
+        alert "导出"
+    done 
+}
+
 # 查看 nodes 机器列表
 nodes() {
     if [ -n "${param01}" ];then 
@@ -419,6 +509,39 @@ nodes() {
 # 查看 node 详情
 descNode() {
     kubectl describe nodes "${param01}"
+}
+
+# 清理垃圾
+clean() {
+    if [ -n "${param01}" ];then 
+        local errMsg="UnexpectedAdmissionError"
+        IsYesNo "是否查找 ${errMsg} 错误的POD，确认(Y/N):"
+        if [ $? -eq 0 ]; then 
+            local count=$(kubectl get pods -n "${param01}"|grep "${errMsg}"|wc -l)
+            if [ ${count} -gt 0 ];then 
+                IsYesNo "空间：${param01}，错误：${errMsg}，共: ${count} 条数，是否需要清理(Y/N):"
+                if [ $? -eq 0 ]; then 
+                    green "开始清理..."
+                    local i=0
+                    for errPodsName in $(kubectl get pods -n "${param01}"|grep "${errMsg}"|awk '{print $1}')
+                    do                         
+                        let i++
+                        red "正在处理: ${i}/${count} ${errPodsName}"
+                        kubectl delete pods -n "${param01}" "${errPodsName}"
+                    done
+                fi 
+            else 
+                green "空间：${param01}，错误：${errMsg}，共: 0 条数"
+            fi 
+        fi 
+    else 
+        local errMsg="UnexpectedAdmissionError"
+        IsYesNo "查找所有空间下的 ${errMsg} 错误的 POD,确认(Y/N):"
+        if [ $? -eq 0 ]; then 
+            green "正在统计不同空间下的 ${errMsg} 数据："
+            kubectl get pods -A |grep "${errMsg}"|awk '{print $1}'|uniq -c
+        fi 
+    fi
 }
 
 ## 分类操作
@@ -437,11 +560,20 @@ in
     "Xdeploy")
         deploy
     ;;
-    "Xpod"|"Xpods")
+    "Xdeploys")
+        deploys
+    ;;
+    "Xpod")
         pod
+    ;;
+    "Xpods")
+        pods
     ;;
     "Xsvc")
         svc
+    ;;
+    "Xsvcs")
+        svcs
     ;;
     "Xdesc-node")
         descNode
@@ -471,6 +603,12 @@ in
     ;;
     "Xex-deploy")
         exportDeploy
+    ;;
+    "Xex-svc"|"Xex-serivce")
+        exportService
+    ;;
+    "Xclean")
+        clean
     ;;
     *)
         help

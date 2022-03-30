@@ -23,9 +23,9 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 查看Nodes（nodes）
 - 部署应用资源（apply）
 - 重新部署应用资源（reapply）
-- 查看 deploy 资源应用列表（deploy）
-- 查看 pod 资源列表（pod）
-- 查看 service 资源列表（svc）
+- 查看 deploy 资源应用列表（deploy/deploys）
+- 查看 pod 资源列表（pod/pods）
+- 查看 service 资源列表（svc/svcs）
 - 查看 node 资源详情（desc-node）
 - 查看 deploy 资源详情（desc-deploy）
 - 查看 pod 资源详情（desc-pod）
@@ -35,6 +35,7 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 监听 pod 日志（logsf）
 - 查看 deploy, servier, pod 三种资源（all）
 - 导出 Deploy YAML（ex-deploy）
+- 清理垃圾(clean)
 
 ## 安装
 
@@ -129,4 +130,16 @@ k1s ex-deploy
 
 # 导出单个资源的 yaml
 k1s ex-deploy nginx-test
+```
+
+- 清理垃圾
+
+目前支持清理 UnexpectedAdmissionError 错误垃圾。
+
+```sh
+# 查看不同空间下统计的错误信息
+k1s clean 
+
+# 清理指定空间下的错误信息
+k1s clean dev
 ```
