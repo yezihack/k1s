@@ -56,24 +56,32 @@ help() {
     scriptName=$0
     scriptName=$(basename "${scriptName}")
     local tools=(
-"01. Nodes: ${scriptName} node"
-"02. 部署: ${scriptName} apply {资源名称}"
-"03. 重新部署: ${scriptName} reapply {资源名称}"
-"04. 查看 deploy 列表: ${scriptName} deploy|deploys {资源名称}"
-"05. 查看 pod 列表: ${scriptName} pod|pods {资源名称}"
-"06. 查看 service 列表: ${scriptName} svc|svcs {资源名称}"    
-"07. 查看 node 列表: ${scriptName} desc-node {资源名称}"    
-"08. 查看 deploy 详情: ${scriptName} desc-doploy {资源名称}"
-"09. 查看 pod 详情: ${scriptName} desc-pod {资源名称}"
-"10. 进入 pod 容器: ${scriptName} exec {POD名称}"  
-"11. 自动进入 pod 容器: ${scriptName} auto {资源名称}"    
-"12. 查看 pod 日志: ${scriptName} logs {POD名称}"    
-"13. 监听 pod 日志: ${scriptName} logsf {POD名称}"    
-"14. 查看 all: ${scriptName} all {资源名称}"
-"15. 导出 Deploy YAML: ${scriptName} ex-deploy {资源名称}"
-"16. 导出 Service YAML: ${scriptName} ex-svc {资源名称}"
-"17. 清理垃圾: ${scriptName} clean {空间名称}"
-"help. 查看帮助：${scriptName} help"
+"开始部署:              ${scriptName} apply {资源名称}"
+"重新部署:              ${scriptName} reapply {资源名称}"
+"查看 node 列表:        ${scriptName} node|nodes"
+"查看 node 标签:        ${scriptName} label|labels"
+"查看 deploy 列表:      ${scriptName} deploy|deploys {资源名称}"
+"查看 pod 列表:         ${scriptName} pod|pods {资源名称}"
+"查看 service 列表:     ${scriptName} svc|svcs {资源名称}"    
+"查看 endpoints 列表:   ${scriptName} ep|eps {资源名称}"    
+"查看 daemonsets 列表:  ${scriptName} ds|dss {资源名称}"    
+"查看 node 详情:        ${scriptName} desc-node {资源名称}"    
+"查看 deploy 详情:      ${scriptName} desc-doploy {资源名称}"
+"查看 pod 详情:         ${scriptName} desc-pod {资源名称}"
+"查看 endpoints 详情:   ${scriptName} desc-ep {资源名称}"
+"查看 daemonsets 详情:  ${scriptName} desc-ds {资源名称}"
+"查看 pod YAML:         ${scriptName} yaml-pod {资源名称}"
+"查看 deploy YAML:      ${scriptName} yaml-deploy {资源名称}"
+"查看 service YAML:     ${scriptName} yaml-svc {资源名称}"
+"进入 pod 容器:         ${scriptName} exec {POD名称}"  
+"自动进入 pod 容器:     ${scriptName} auto {资源名称}"    
+"查看 pod 日志:         ${scriptName} logs {POD名称}"    
+"监听 pod 日志:         ${scriptName} logsf {POD名称}"    
+"查看 all:              ${scriptName} all {资源名称}"
+"导出 Deploy YAML:      ${scriptName} ex-deploy {资源名称}"
+"导出 Service YAML:     ${scriptName} ex-svc {资源名称}"
+"清理垃圾:              ${scriptName} clean {空间名称}"
+"查看帮助：             ${scriptName} help"
 )
     local tips=(
 "1. 设置YAML路径的环境变量方式：export K1S_NS=/home/test/ (必须/结尾)"
@@ -92,9 +100,16 @@ help() {
      \/         \/  by 百里(github.com/yezihack)
 
 EOF
+    local i=0
     for name in "${tools[@]}"
     do 
-        blue "${name}"
+        ((i++)) # 自增
+        if [[ ${i} -le 9 ]];then
+            inc="0${i}"
+        else 
+            inc=${i}
+        fi
+        blue "${inc}. ${name}"
     done
     echo "TIP:"
     for name in "${tips[@]}"
@@ -364,6 +379,57 @@ descPod() {
     getcheck
     kubectl describe pod -n "${nameSpace}" "${param01}"
 }
+# 查看 endpoints 列表
+endpoints() {
+    yello "############ 查看 endpoints 列表 ###############"
+    tip
+    checkns
+    if [ -n "${param01}" ];then
+        kubectl -n "${nameSpace}" get endpoints "${param01}"
+    else 
+        kubectl -n "${nameSpace}" get endpoints
+    fi
+    
+}
+
+# 查看 endpoints 详情
+descEndpoints() {
+    yello "############ 查看 endpoints 详情 ###############"
+    tip
+    getcheck
+    kubectl -n "${nameSpace}" describe endpoints "${param01}"
+}
+
+# 查看 daemonsets 列表
+daemonsets() {
+    yello "############ 查看 daemonsets 列表 ###############"
+    tip
+    checkns
+    if [ -n "${param01}" ];then
+        kubectl -n "${nameSpace}" get ds "${param01}"
+    else 
+        kubectl -n "${nameSpace}" get ds
+    fi 
+}
+# 查看 daemonsets 列表
+daemonsetsWide() {
+    yello "############ 查看 daemonsets 列表 ###############"
+    tip
+    checkns
+    if [ -n "${param01}" ];then
+        kubectl -n "${nameSpace}" get ds "${param01}" -o wide
+    else 
+        kubectl -n "${nameSpace}" get ds -o wide
+    fi 
+}
+
+# 查看 daemonsets 详情
+descDaemonsets() {
+    yello "############ 查看 daemonsets 详情 ###############"
+    tip
+    getcheck
+    kubectl -n "${nameSpace}" describe ds "${param01}"
+}
 # 进入容器
 execPod() {
     yello "############ 进入 ${param01} pod 容器 ###############"
@@ -385,6 +451,11 @@ autoExecPod() {
     fi 
     green "自动获取第一个POD名称：${podsName}"
     kubectl exec -it -n "${nameSpace}" "${podsName}" bash
+    # 如果出错的话，尝试另一种方式
+    if [ $? -ne 0 ];then 
+        green "bash 方式失败，正在尝试 sh 方式进入容器："
+        kubectl exec -it -n "${nameSpace}" "${podsName}" sh
+    fi 
 }
 # 查看pod 日志
 logsPod() {
@@ -498,7 +569,9 @@ exportService() {
 }
 
 # 查看 nodes 机器列表
-nodes() {
+node() {
+    yello "############ 查看 node 列表 ###############"
+    tip
     if [ -n "${param01}" ];then 
         kubectl get nodes "${param01}"
     else 
@@ -506,11 +579,67 @@ nodes() {
     fi
 }
 
+# 查看 nodes 机器列表
+nodes() {
+    yello "############ 查看 node 列表 ###############"
+    tip
+    if [ -n "${param01}" ];then 
+        kubectl get nodes "${param01}" -o wide
+    else 
+        kubectl get nodes -o wide
+    fi
+}
+
 # 查看 node 详情
 descNode() {
+    yello "############ 查看 ${param01} node 详情 ###############"
+    tip
+    getcheck
     kubectl describe nodes "${param01}"
 }
 
+# 查看 node 标签
+nodeLabel() {
+    yello "############ 查看 node 标签 ###############"
+    tip
+    if [ -n "${param01}" ];then 
+        kubectl get node "${param01}" --show-labels
+    else 
+        kubectl get node --show-labels
+    fi
+}
+# 查看 pod yaml
+yamlPod() {
+    yello "############ 查看 pods YAML ###############"
+    tip
+    if [ -n "${param01}" ];then 
+        kubectl -n "${nameSpace}" get pods "${param01}" -o yaml
+    else 
+        kubectl -n "${nameSpace}" get pods -o yaml
+    fi
+}
+
+# 查看 pod yaml
+yamlDeploy() {
+    yello "############ 查看 deploy YAML ###############"
+    tip
+    if [ -n "${param01}" ];then 
+        kubectl -n "${nameSpace}" get deploy "${param01}" -o yaml
+    else 
+        kubectl -n "${nameSpace}" get deploy -o yaml
+    fi
+}
+
+# 查看 pod yaml
+yamlService() {
+    yello "############ 查看 service YAML ###############"
+    tip
+    if [ -n "${param01}" ];then 
+        kubectl -n "${nameSpace}" get svc "${param01}" -o yaml
+    else 
+        kubectl -n "${nameSpace}" get svc -o yaml
+    fi
+}
 # 清理垃圾
 clean() {
     if [ -n "${param01}" ];then 
@@ -547,17 +676,23 @@ clean() {
 ## 分类操作
 
 case "X${action}" 
-in
-    "Xnode"|"Xnodes")
-        nodes
-    ;;
+in    
     "Xapply")
         apply
     ;;
     "Xreapply")
         reapply
     ;;
-    "Xdeploy")
+    "Xnode")
+        node
+    ;;
+    "Xnodes")
+        nodes
+    ;;
+    "Xlabel"|"Xlabels")
+        nodeLabel
+    ;;
+    "Xdeploy"|"Xdep")
         deploy
     ;;
     "Xdeploys")
@@ -575,15 +710,39 @@ in
     "Xsvcs")
         svcs
     ;;
-    "Xdesc-node")
+    "Xep"|"Xeps")
+        endpoints
+    ;;
+    "Xds")
+        daemonsets
+    ;;
+    "Xdss")
+        daemonsetsWide
+    ;;
+    "Xdesc-node"|"Xdesc-nodes")
         descNode
     ;;
-    "Xdesc-deploy")
+    "Xdesc-deploy"|"Xdesc-deploys")
         descDeploy
     ;;
     "Xdesc-pod"|"Xdesc-pods")
         descPod
     ;;
+    "Xdesc-ep"|"Xdesc-eps")
+        descEndpoints
+    ;;    
+    "Xdesc-ds"|"Xdesc-dss")
+        descDaemonsets
+    ;;    
+    "Xyaml-pod"|"Xyaml-pods")
+        yamlPod
+    ;; 
+    "Xyaml-deploy"|"Xyaml-dep")
+        yamlDeploy
+    ;; 
+    "Xyaml-svc"|"Xyaml-service")
+        yamlService
+    ;; 
     "Xexec")
         execPod
     ;; 
