@@ -24,7 +24,7 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 部署应用资源（apply）
 - 重新部署应用资源（reapply）
 - 查看 deploy 资源应用列表（deploy/deploys）
-- 查看 pod 资源列表（pod/pods）
+- 查看 pod 资源列表（pod/pods|p|ps）[监听(w)]
 - 查看 service 资源列表（svc/svcs）
 - 查看 endpoints 资源列表（ep/eps）
 - 查看 daemonsets 资源列表（ds/dss）
@@ -40,8 +40,12 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 自动进入 pod 容器（auto）
 - 查看 pod 日志（logs）
 - 监听 pod 日志（logsf）
+- 监听 watch-pods 资源（w-po|w-pod|w-pods）*
+- 监听 watch-deploy 资源（w-dep||w-deploy）*
 - 查看 deploy, servier, pod 三种资源（all）
-- 导出 Deploy YAML（ex-deploy）
+- 导出 deploy YAML（ex-deploy）
+- 删除 pod 资源 (rm-pod|rm-pods）*
+- 删除 deploy 应用 (rm-deploy）*
 - 清理垃圾(clean)
 
 ## 安装

@@ -10,6 +10,9 @@ action=$1
 # 参数1
 param01=$2
 
+# 参数2
+param02=$3
+
 # 命名空间
 nameSpace=${K1S_NS}
 
@@ -58,30 +61,32 @@ help() {
     local tools=(
 "开始部署:              ${scriptName} apply {资源名称}"
 "重新部署:              ${scriptName} reapply {资源名称}"
-"查看 node 列表:        ${scriptName} node|nodes"
-"查看 node 标签:        ${scriptName} label|labels"
-"查看 deploy 列表:      ${scriptName} deploy|deploys {资源名称}"
-"查看 pod 列表:         ${scriptName} pod|pods {资源名称}"
-"查看 service 列表:     ${scriptName} svc|svcs {资源名称}"    
+"查看 node 列表:        ${scriptName} node|nodes|n|ns"
+"查看 node 标签:        ${scriptName} label|labels|l|ls"
+"查看 deploy 列表:      ${scriptName} deploy|deploys|dep|deps|d {资源名称}"
+"查看 pod 列表:         ${scriptName} pod|pods|p|ps {资源名称} [监听(w)]"
+"查看 service 列表:     ${scriptName} svc|svcs|s|ss {资源名称}"    
 "查看 endpoints 列表:   ${scriptName} ep|eps {资源名称}"    
 "查看 daemonsets 列表:  ${scriptName} ds|dss {资源名称}"    
-"查看 node 详情:        ${scriptName} desc-node {资源名称}"    
-"查看 deploy 详情:      ${scriptName} desc-doploy {资源名称}"
-"查看 pod 详情:         ${scriptName} desc-pod {资源名称}"
-"查看 endpoints 详情:   ${scriptName} desc-ep {资源名称}"
-"查看 daemonsets 详情:  ${scriptName} desc-ds {资源名称}"
-"查看 pod YAML:         ${scriptName} yaml-pod {资源名称}"
-"查看 deploy YAML:      ${scriptName} yaml-deploy {资源名称}"
-"查看 service YAML:     ${scriptName} yaml-svc {资源名称}"
+"查看 node 详情:        ${scriptName} desc-node|desc-nodes|dn|dns {资源名称}"    
+"查看 deploy 详情:      ${scriptName} desc-deploy|dd|dds {资源名称}"
+"查看 pod 详情:         ${scriptName} desc-pod|dp|dps {资源名称}"
+"查看 endpoints 详情:   ${scriptName} desc-ep|de|des {资源名称}"
+"查看 daemonsets 详情:  ${scriptName} desc-ds|desc-dds {资源名称}"
+"查看 pod YAML:         ${scriptName} yaml-pod|yp {资源名称}"
+"查看 deploy YAML:      ${scriptName} yaml-deploy|yd {资源名称}"
+"查看 service YAML:     ${scriptName} yaml-svc|ys {资源名称}"
 "进入 pod 容器:         ${scriptName} exec {POD名称}"  
 "自动进入 pod 容器:     ${scriptName} auto {资源名称}"    
 "查看 pod 日志:         ${scriptName} logs {POD名称}"    
 "监听 pod 日志:         ${scriptName} logsf {POD名称}"    
 "查看 all:              ${scriptName} all {资源名称}"
-"导出 Deploy YAML:      ${scriptName} ex-deploy {资源名称}"
-"导出 Service YAML:     ${scriptName} ex-svc {资源名称}"
-"清理垃圾:              ${scriptName} clean {空间名称}"
-"查看帮助：             ${scriptName} help"
+"导出 Deploy YAML:      ${scriptName} ex-deploy|ed {资源名称}"
+"导出 Service YAML:     ${scriptName} ex-svc|es {资源名称}"
+"删除 pod 资源:         ${scriptName} rm-pod|rmp {资源名称}"
+"删除 deploy 应用:      ${scriptName} rm-deploy|rmd {资源名称}"
+"清理垃圾:              ${scriptName} clean|c {空间名称}"
+"查看帮助：             ${scriptName} help|h"
 )
     local tips=(
 "1. 设置YAML路径的环境变量方式：export K1S_NS=/home/test/ (必须/结尾)"
@@ -307,7 +312,7 @@ checkns() {
 getcheck() {
      ## 检查输入参数
     if [ -z "${param01}" ]; then 
-        red "请输入您的应用名称！"
+        red "请输入您的名称参数！"
         exit 1
     fi 
    checkns
@@ -334,7 +339,13 @@ pod() {
     tip
     checkns
     if [ -n "${param01}" ];then 
-        kubectl get pods -n "${nameSpace}" |grep ${param01}
+        if [ -n "${param02}" ] && [ "${param02}" = "w" ]; then 
+            green "正在监听 <${param01}> 应用:"
+            kubectl get pods -n "${nameSpace}" -w |grep "${param01}"
+        else 
+            kubectl get pods -n "${nameSpace}" |grep "${param01}"
+        fi 
+        
     else
         kubectl get pods -n "${nameSpace}"        
     fi    
@@ -345,7 +356,13 @@ pods() {
     tip
     checkns
     if [ -n "${param01}" ];then 
-        kubectl get pods -n "${nameSpace}" -o wide |grep ${param01}
+        if [ -n "${param02}" ] && [ "${param02}" = "w" ]; then 
+            green "正在监听 <${param01}> 应用:"
+            kubectl get pods -n "${nameSpace}" -w -o wide |grep "${param01}"
+        else 
+            kubectl get pods -n "${nameSpace}" -o wide |grep "${param01}"
+        fi
+        
     else
         kubectl get pods -n "${nameSpace}" -o wide        
     fi    
@@ -612,6 +629,7 @@ nodeLabel() {
 yamlPod() {
     yello "############ 查看 pods YAML ###############"
     tip
+    checkns
     if [ -n "${param01}" ];then 
         kubectl -n "${nameSpace}" get pods "${param01}" -o yaml
     else 
@@ -623,6 +641,7 @@ yamlPod() {
 yamlDeploy() {
     yello "############ 查看 deploy YAML ###############"
     tip
+    checkns
     if [ -n "${param01}" ];then 
         kubectl -n "${nameSpace}" get deploy "${param01}" -o yaml
     else 
@@ -634,12 +653,72 @@ yamlDeploy() {
 yamlService() {
     yello "############ 查看 service YAML ###############"
     tip
+    checkns
     if [ -n "${param01}" ];then 
         kubectl -n "${nameSpace}" get svc "${param01}" -o yaml
     else 
         kubectl -n "${nameSpace}" get svc -o yaml
     fi
 }
+
+# 监听 pods 创建变化
+watchPods() {
+    yello "############ 正在监听 ${param01} pods 变化 ###############"
+    tip
+    checkns
+    if [ -n "${param01}" ];then 
+        kubectl -n "${nameSpace}" get pods -w |grep "${param01}"
+    else 
+        kubectl -n "${nameSpace}" get pods -w
+    fi
+}
+
+# 删除 pods 
+removePods() {
+    yello "############ 正在删除 pods 操作！！！ ###############"
+    tip
+    checkns
+    getcheck
+    # 先判断输入的名称是否存在
+    count=$(kubectl -n "${nameSpace}" get pods |grep "${param01}"|wc -l)
+    if [ ${count} -eq 0 ];then 
+        red "POD名称：<${param01}> 不存在，请检查！！！"
+        exit 0
+    fi    
+    
+    # 存在则提醒是否需要继续删除操作
+    IsYesNo "确定要删除 <${param01}> POD名称吗？"
+    if [ $? -eq 0 ];then 
+        red "正在删除..."
+        kubectl -n "${nameSpace}" delete pods "${param01}"
+    else 
+        green "取消删除操作!"
+    fi
+}
+
+# 删除 deploy 
+removeDeploy() {
+    red "############ 正在删除 deploy 操作！！！ ###############"
+    tip
+    checkns
+    getcheck
+    # 先判断输入的名称是否存在
+    count=$(kubectl -n "${nameSpace}" get deploy |grep "${param01}"|wc -l)
+    if [ ${count} -eq 0 ];then 
+        red "Deploy名称: <${param01}> 不存在，请检查！！！"
+        exit 0
+    fi    
+    
+    # 存在则提醒是否需要继续删除操作
+    IsYesNo "确定要删除 <${param01}> Deploy 名称吗？"
+    if [ $? -eq 0 ];then 
+        red "正在删除..."
+        kubectl -n "${nameSpace}" delete deploy "${param01}"
+    else 
+        green "取消删除操作!"
+    fi
+}
+
 # 清理垃圾
 clean() {
     if [ -n "${param01}" ];then 
@@ -683,31 +762,31 @@ in
     "Xreapply")
         reapply
     ;;
-    "Xnode")
+    "Xnode"|"Xn")
         node
     ;;
-    "Xnodes")
+    "Xnodes"|"Xns")
         nodes
     ;;
-    "Xlabel"|"Xlabels")
+    "Xlabel"|"Xlabels"|"Xl"|"Xls")
         nodeLabel
     ;;
-    "Xdeploy"|"Xdep")
+    "Xdeploy"|"Xdep"|"Xd")
         deploy
     ;;
-    "Xdeploys")
+    "Xdeploys"|"Xdeps")
         deploys
     ;;
-    "Xpod")
+    "Xpod"|"Xp")
         pod
     ;;
-    "Xpods")
+    "Xpods"|"Xps")
         pods
     ;;
-    "Xsvc")
+    "Xsvc"|"Xs")
         svc
     ;;
-    "Xsvcs")
+    "Xsvcs"|"Xss")
         svcs
     ;;
     "Xep"|"Xeps")
@@ -719,28 +798,28 @@ in
     "Xdss")
         daemonsetsWide
     ;;
-    "Xdesc-node"|"Xdesc-nodes")
+    "Xdesc-node"|"Xdesc-nodes"|"Xdn"|"Xdns")
         descNode
     ;;
-    "Xdesc-deploy"|"Xdesc-deploys")
+    "Xdesc-deploy"|"Xdesc-deploys"|"Xdd"|"Xdds")
         descDeploy
     ;;
-    "Xdesc-pod"|"Xdesc-pods")
+    "Xdesc-pod"|"Xdesc-pods"|"Xdp"|"Xdps")
         descPod
     ;;
-    "Xdesc-ep"|"Xdesc-eps")
+    "Xdesc-ep"|"Xdesc-eps"|"Xde"|"Xdes")
         descEndpoints
     ;;    
     "Xdesc-ds"|"Xdesc-dss")
         descDaemonsets
     ;;    
-    "Xyaml-pod"|"Xyaml-pods")
+    "Xyaml-pod"|"Xyaml-pods"|"Xyp"|"Xyps")
         yamlPod
     ;; 
-    "Xyaml-deploy"|"Xyaml-dep")
+    "Xyaml-deploy"|"Xyaml-dep"|"Xyd")
         yamlDeploy
     ;; 
-    "Xyaml-svc"|"Xyaml-service")
+    "Xyaml-svc"|"Xyaml-service"|"Xys")
         yamlService
     ;; 
     "Xexec")
@@ -760,13 +839,19 @@ in
         pod
         svc
     ;;
-    "Xex-deploy")
+    "Xex-deploy"|"Xed")
         exportDeploy
     ;;
-    "Xex-svc"|"Xex-serivce")
+    "Xex-svc"|"Xex-serivce"|"Xes"|"Xess")
         exportService
     ;;
-    "Xclean")
+    "Xrm-pod"|"Xrm-pods"|"Xrmp")
+        removePods
+    ;;
+    "Xrm-deploy"|"Xrmd")
+        removeDeploy
+    ;;
+    "Xclean"|"Xc")
         clean
     ;;
     *)
