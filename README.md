@@ -68,7 +68,8 @@ k1s [操作类型] [资源名称]
 
 ```sh
 export K1S_NS=[空间名称]
-export K1S_PATH=[操作路径]
+# 设置路径时使用下划线结束 (/)
+export K1S_PATH=[操作路径] 
 
 k1s [操作类型] [资源名称]
 ```
