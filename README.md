@@ -40,12 +40,10 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 自动进入 pod 容器（auto）
 - 查看 pod 日志（logs）
 - 监听 pod 日志（logsf）
-- 监听 watch-pods 资源（w-po|w-pod|w-pods）*
-- 监听 watch-deploy 资源（w-dep||w-deploy）*
 - 查看 deploy, servier, pod 三种资源（all）
 - 导出 deploy YAML（ex-deploy）
-- 删除 pod 资源 (rm-pod|rm-pods）*
-- 删除 deploy 应用 (rm-deploy）*
+- 删除 pod 资源 (rm-pod|rm-pods
+- 删除 deploy 应用 (rm-deploy
 - 清理垃圾(clean)
 
 ## 安装

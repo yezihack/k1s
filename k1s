@@ -3,6 +3,8 @@
 # k8s 工具集
 ############################
 
+version=0.0.2
+
 ############参数###########
 # 动作名称
 action=$1
@@ -103,6 +105,7 @@ help() {
 |    < |   |\___ \ 
 |__|_ \|___/____  >
      \/         \/  by 百里(github.com/yezihack)
+    version: ${version}
 
 EOF
     local i=0
@@ -309,13 +312,12 @@ checkns() {
         red "请设置命名空间环境变量, 查看帮助:help"
     fi
 }
-getcheck() {
+checkParam01() {
      ## 检查输入参数
     if [ -z "${param01}" ]; then 
         red "请输入您的名称参数！"
         exit 1
-    fi 
-   checkns
+    fi
 }
 # 查看 deploy
 deploy() {
@@ -364,7 +366,12 @@ pods() {
         fi
         
     else
-        kubectl get pods -n "${nameSpace}" -o wide        
+        if [ -n "${param01}" ] && [ "${param01}" = "w" ];then 
+            kubectl get pods -n "${nameSpace}" -o wide -w   
+        else 
+            kubectl get pods -n "${nameSpace}" -o wide      
+        fi
+          
     fi    
 }
 # 查看 service
@@ -386,14 +393,14 @@ svcs() {
 descDeploy() {
     yello "############ 查看 deploy 详情 ###############"
     tip
-    getcheck
+    checkParam01
     kubectl describe deploy -n "${nameSpace}" "${param01}"
 }
 # 详情查看pods
 descPod() {
     yello "############ 查看 pod 详情 ###############"
     tip
-    getcheck
+    checkParam01
     kubectl describe pod -n "${nameSpace}" "${param01}"
 }
 # 查看 endpoints 列表
@@ -413,7 +420,7 @@ endpoints() {
 descEndpoints() {
     yello "############ 查看 endpoints 详情 ###############"
     tip
-    getcheck
+    checkParam01
     kubectl -n "${nameSpace}" describe endpoints "${param01}"
 }
 
@@ -444,14 +451,14 @@ daemonsetsWide() {
 descDaemonsets() {
     yello "############ 查看 daemonsets 详情 ###############"
     tip
-    getcheck
+    checkParam01
     kubectl -n "${nameSpace}" describe ds "${param01}"
 }
 # 进入容器
 execPod() {
     yello "############ 进入 ${param01} pod 容器 ###############"
     tip
-    getcheck
+    checkParam01
     kubectl exec -it -n "${nameSpace}" "${param01}" bash
 }
 
@@ -459,7 +466,7 @@ execPod() {
 autoExecPod() {
     yello "############ 进入 ${param01} pod 容器 ###############"
     tip
-    getcheck
+    checkParam01
     # 从名称中自动获取 pod 名称
     podsName=$(kubectl get pods -n "${nameSpace}" |grep "${param01}" |sed -n '1p'|awk '{print $1}')
     if [ -z "${podsName}" ];then 
@@ -478,14 +485,14 @@ autoExecPod() {
 logsPod() {
     yello "############ 查看 ${param01} pod 日志 ###############"
     tip
-    getcheck
+    checkParam01
     kubectl logs -n "${nameSpace}" "${param01}"
 }
 # 动态查看日志
 logsFpod() {
     yello "############ 动态监听 ${param01} pod 日志 ###############"
     tip
-    getcheck
+    checkParam01
     kubectl logs -f -n "${nameSpace}" "${param01}"
 }
 # 导出 Deploy YAML
@@ -611,7 +618,7 @@ nodes() {
 descNode() {
     yello "############ 查看 ${param01} node 详情 ###############"
     tip
-    getcheck
+    checkParam01
     kubectl describe nodes "${param01}"
 }
 
@@ -678,7 +685,7 @@ removePods() {
     yello "############ 正在删除 pods 操作！！！ ###############"
     tip
     checkns
-    getcheck
+    checkParam01
     # 先判断输入的名称是否存在
     count=$(kubectl -n "${nameSpace}" get pods |grep "${param01}"|wc -l)
     if [ ${count} -eq 0 ];then 
@@ -701,7 +708,7 @@ removeDeploy() {
     red "############ 正在删除 deploy 操作！！！ ###############"
     tip
     checkns
-    getcheck
+    checkParam01
     # 先判断输入的名称是否存在
     count=$(kubectl -n "${nameSpace}" get deploy |grep "${param01}"|wc -l)
     if [ ${count} -eq 0 ];then 
