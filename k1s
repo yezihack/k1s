@@ -29,7 +29,8 @@ savePath=${K1S_PATH}
 # 判断结果状态
 alert() {
 	local val=$1
-	if [ $? -eq 0 ]; then
+	local ret=$?
+	if [[ ${ret} -eq 0 ]]; then
 		echo -e "\033[32m ${val} 成功 \033[0m"
 	else
 		echo -e "\033[31m ${val} 失败 \033[0m"
@@ -141,7 +142,7 @@ tip() {
 IsContinue() {
 	local msg=$1
 	while true; do
-		read -p "${msg}" ok
+		read -r -p "${msg}" ok
 		case "${ok}" in
 		[Yy])
 			break
@@ -158,7 +159,7 @@ IsContinue() {
 IsYesNo() {
 	local msg=$1
 	while true; do
-		read -p "${msg}" ok
+		read -r -p "${msg}" ok
 		case "${ok}" in
 		[Yy])
 			return 0
@@ -217,7 +218,8 @@ apply() {
 	check
 
 	kubectl get -f "${fullFile}" &>/dev/null
-	if [ $? -eq 0 ]; then
+	local ret=$?
+	if [ ${ret} -eq 0 ]; then
 		red "${param01} 不是新应用，请检查后使用 reapply 方式部署。"
 		exit 1
 	fi
@@ -287,13 +289,15 @@ reapply() {
 
 	# 6. 查看应用详情
 	IsYesNo "是否查看应用:${param01} 的部署详情(Y/N):"
-	if [ $? -eq 0 ]; then
+	local ret=$?
+	if [ ${ret} -eq 0 ]; then
 		kubectl describe -f "${fullFile}"
 	fi
 
 	# 7. 查看 pods
 	IsYesNo "是否查看应用:${param01} 的 POD 详情(Y/N):"
-	if [ $? -eq 0 ]; then
+	local ret=$?
+	if [ $ret -eq 0 ]; then
 		kubectl get pods -n "${nameSpace}" -o wide | grep "${param01}"
 	fi
 
@@ -317,7 +321,7 @@ deploy() {
 	yello "############ 查看 deploy ###############"
 	tip
 	checkns
-	kubectl get deploy -n "${nameSpace}" ${param01}
+	kubectl get deploy -n "${nameSpace}" "${param01}"
 }
 
 # 查看 deploy
@@ -325,7 +329,7 @@ deploys() {
 	yello "############ 查看 deploy ###############"
 	tip
 	checkns
-	kubectl get deploy -n "${nameSpace}" ${param01} -o wide
+	kubectl get deploy -n "${nameSpace}" "${param01}" -o wide
 }
 
 # 查看 pods
@@ -372,7 +376,7 @@ svc() {
 	yello "############ 查看 service ###############"
 	tip
 	checkns
-	kubectl get svc -n "${nameSpace}" ${param01}
+	kubectl get svc -n "${nameSpace}" "${param01}"
 }
 
 # 查看 service
@@ -380,7 +384,7 @@ svcs() {
 	yello "############ 查看 service ###############"
 	tip
 	checkns
-	kubectl get svc -n "${nameSpace}" ${param01} -o wide
+	kubectl get svc -n "${nameSpace}" "${param01}" -o wide
 }
 # 详情查看 deploy
 descDeploy() {
@@ -469,7 +473,8 @@ autoExecPod() {
 	green "自动获取第一个POD名称：${podsName}"
 	kubectl exec -it -n "${nameSpace}" "${podsName}" bash
 	# 如果出错的话，尝试另一种方式
-	if [ $? -ne 0 ]; then
+	local ret=$?
+	if [ ${ret} -ne 0 ]; then
 		green "bash 方式失败，正在尝试 sh 方式进入容器："
 		kubectl exec -it -n "${nameSpace}" "${podsName}" sh
 	fi
@@ -495,7 +500,7 @@ exportDeploy() {
 	if [ -n "${param01}" ]; then
 		yello "############ 导出应用 DEPLOY ${param01} ###############"
 		# 判断应用是否存在
-		count=$(kubectl get deploy -n "${nameSpace}" | grep "${param01}" | wc -l)
+		count=$(kubectl get deploy -n "${nameSpace}" | grep -c "${param01}")
 		if [ "${count}" -eq 0 ]; then
 			red "${param01} 应用不存在，请检查！"
 			exit 0
@@ -542,7 +547,7 @@ exportService() {
 	if [ -n "${param01}" ]; then
 		yello "############ 导出应用 SERVICE ${param01} ###############"
 		# 判断应用是否存在
-		count=$(kubectl get svc -n "${nameSpace}" | grep "${param01}" | wc -l)
+		count=$(kubectl get svc -n "${nameSpace}" | grep -c "${param01}")
 		if [ "${count}" -eq 0 ]; then
 			red "${param01} service 不存在，请检查！"
 			exit 0
@@ -678,15 +683,16 @@ removePods() {
 	checkns
 	checkParam01
 	# 先判断输入的名称是否存在
-	count=$(kubectl -n "${nameSpace}" get pods | grep "${param01}" | wc -l)
-	if [ ${count} -eq 0 ]; then
+	count=$(kubectl -n "${nameSpace}" get pods | grep -c -w "${param01}")
+	if [ "${count}" -eq 0 ]; then
 		red "POD名称：<${param01}> 不存在，请检查！！！"
 		exit 0
 	fi
 
 	# 存在则提醒是否需要继续删除操作
 	IsYesNo "确定要删除 <${param01}> POD名称吗？"
-	if [ $? -eq 0 ]; then
+	local ret=$?
+	if [ ${ret} -eq 0 ]; then
 		red "正在删除..."
 		kubectl -n "${nameSpace}" delete pods "${param01}"
 	else
@@ -701,15 +707,16 @@ removeDeploy() {
 	checkns
 	checkParam01
 	# 先判断输入的名称是否存在
-	count=$(kubectl -n "${nameSpace}" get deploy | grep "${param01}" | wc -l)
-	if [ ${count} -eq 0 ]; then
+	count=$(kubectl -n "${nameSpace}" get deploy | grep -c -w "${param01}")
+	if [ "${count}" -eq 0 ]; then
 		red "Deploy名称: <${param01}> 不存在，请检查！！！"
 		exit 0
 	fi
 
 	# 存在则提醒是否需要继续删除操作
 	IsYesNo "确定要删除 <${param01}> Deploy 名称吗？"
-	if [ $? -eq 0 ]; then
+	local result=$?
+	if [ ${result} -eq 0 ]; then
 		red "正在删除..."
 		kubectl -n "${nameSpace}" delete deploy "${param01}"
 	else
@@ -722,15 +729,17 @@ clean() {
 	if [ -n "${param01}" ]; then
 		local errMsg="UnexpectedAdmissionError"
 		IsYesNo "是否查找 ${errMsg} 错误的POD，确认(Y/N):"
-		if [ $? -eq 0 ]; then
-			local count=$(kubectl get pods -n "${param01}" | grep "${errMsg}" | wc -l)
-			if [ ${count} -gt 0 ]; then
+		local result=$?
+		if [ ${result} -eq 0 ]; then
+			count=$(kubectl get pods -n "${param01}" | grep -c "${errMsg}")
+			if [ "${count}" -gt 0 ]; then
 				IsYesNo "空间：${param01}，错误：${errMsg}，共: ${count} 条数，是否需要清理(Y/N):"
-				if [ $? -eq 0 ]; then
+				result=$?
+				if [ ${result} -eq 0 ]; then
 					green "开始清理..."
 					local i=0
 					for errPodsName in $(kubectl get pods -n "${param01}" | grep "${errMsg}" | awk '{print $1}'); do
-						let i++
+						((i++))
 						red "正在处理: ${i}/${count} ${errPodsName}"
 						kubectl delete pods -n "${param01}" "${errPodsName}"
 					done
@@ -742,7 +751,8 @@ clean() {
 	else
 		local errMsg="UnexpectedAdmissionError"
 		IsYesNo "查找所有空间下的 ${errMsg} 错误的 POD,确认(Y/N):"
-		if [ $? -eq 0 ]; then
+		local result=$?
+		if [ ${result} -eq 0 ]; then
 			green "正在统计不同空间下的 ${errMsg} 数据："
 			kubectl get pods -A | grep "${errMsg}" | awk '{print $1}' | uniq -c
 		fi
