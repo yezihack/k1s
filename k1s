@@ -23,6 +23,11 @@ nameSpace=${K1S_NS}
 savePath=${K1S_PATH}
 
 ###########################
+# 错误列表，用于删除
+err_list=(
+"UnexpectedAdmissionError"
+"Terminating"
+)	
 
 ############内置函数#############
 
@@ -725,37 +730,41 @@ removeDeploy() {
 }
 
 # 清理垃圾
-clean() {
+clean() {	
 	if [ -n "${param01}" ]; then
-		local errMsg="UnexpectedAdmissionError"
-		IsYesNo "是否查找 ${errMsg} 错误的POD，确认(Y/N):"
-		local result=$?
-		if [ ${result} -eq 0 ]; then
-			count=$(kubectl get pods -n "${param01}" | grep -c "${errMsg}")
-			if [ "${count}" -gt 0 ]; then
-				IsYesNo "空间：${param01}，错误：${errMsg}，共: ${count} 条数，是否需要清理(Y/N):"
-				result=$?
-				if [ ${result} -eq 0 ]; then
-					green "开始清理..."
-					local i=0
-					for errPodsName in $(kubectl get pods -n "${param01}" | grep "${errMsg}" | awk '{print $1}'); do
-						((i++))
-						red "正在处理: ${i}/${count} ${errPodsName}"
-						kubectl delete pods -n "${param01}" "${errPodsName}"
-					done
+		# local errMsg="UnexpectedAdmissionError"
+		for errMsg in "${err_list[@]}";do
+			IsYesNo "是否查找 ${errMsg} 错误的POD，确认(Y/N):"
+			local result=$?
+			if [ ${result} -eq 0 ]; then
+				count=$(kubectl get pods -n "${param01}" | grep -c "${errMsg}")
+				if [ "${count}" -gt 0 ]; then
+					IsYesNo "空间：${param01}，错误：${errMsg}，共: ${count} 条数，是否需要清理(Y/N):"
+					result=$?
+					if [ ${result} -eq 0 ]; then
+						green "开始清理..."
+						local i=0
+						for errPodsName in $(kubectl get pods -n "${param01}" | grep "${errMsg}" | awk '{print $1}'); do
+							((i++))
+							red "正在处理: ${i}/${count} ${errPodsName}"
+							kubectl delete pods -n "${param01}" "${errPodsName}"
+						done
+					fi
+				else
+					green "空间：${param01}，错误：${errMsg}，共: 0 条数"
 				fi
-			else
-				green "空间：${param01}，错误：${errMsg}，共: 0 条数"
 			fi
-		fi
+		done
 	else
-		local errMsg="UnexpectedAdmissionError"
-		IsYesNo "查找所有空间下的 ${errMsg} 错误的 POD,确认(Y/N):"
-		local result=$?
-		if [ ${result} -eq 0 ]; then
-			green "正在统计不同空间下的 ${errMsg} 数据："
-			kubectl get pods -A | grep "${errMsg}" | awk '{print $1}' | uniq -c
-		fi
+		# local errMsg="UnexpectedAdmissionError"
+		for errMsg in "${err_list[@]}";do
+			IsYesNo "查找所有空间下的 ${errMsg} 错误的 POD,确认(Y/N):"
+			local result=$?
+			if [ ${result} -eq 0 ]; then
+				green "正在统计不同空间下的 ${errMsg} 数据："
+				kubectl get pods -A | grep "${errMsg}" | awk '{print $1}' | uniq -c
+			fi
+		done
 	fi
 }
 
