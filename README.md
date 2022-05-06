@@ -28,22 +28,27 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 查看 service 资源列表（svc/svcs）
 - 查看 endpoints 资源列表（ep/eps）
 - 查看 daemonsets 资源列表（ds/dss）
+- 查看 statefulSet 资源列表（sts）*
+- 查看 ingress 资源列表（ing|ingress) *
 - 查看 node 资源详情（desc-node）
 - 查看 deploy 资源详情（desc-deploy）
 - 查看 pod 资源详情（desc-pod）
 - 查看 endpoints 资源详情（desc-ep）
 - 查看 daemonsets 资源详情（desc-ds）
+- 查看 statefulSet 资源详情（desc-sts）*
+- 查看 ingress 资源详情（desc-ing）*
 - 查看 pod YAML（yaml-pod）
 - 查看 deploy YAML（yaml-deploy）
 - 查看 service YAML（yaml-svc）
 - 进入 pod 容器（exec）
 - 自动进入 pod 容器（auto）
-- 查看 pod 日志（logs）
-- 监听 pod 日志（logsf）
+- 查看 pod 日志（log|logs）
+- 监听 pod 日志（logf|logsf）
 - 查看 deploy, servier, pod 三种资源（all）
 - 导出 deploy YAML（ex-deploy）
-- 删除 pod 资源 (rm-pod|rm-pods
-- 删除 deploy 应用 (rm-deploy
+- 删除 pod 资源 (rm-pod|rm-pods)
+- 删除 deploy 应用 (rm-deploy)
+- 删除 statefulSet 应用 (rm-sts) *
 - 清理垃圾(clean)
 
 ## 安装

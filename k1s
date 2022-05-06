@@ -326,7 +326,11 @@ deploy() {
 	yello "############ 查看 deploy ###############"
 	tip
 	checkns
-	kubectl get deploy -n "${nameSpace}" "${param01}"
+	if [ -z "${param01}" ]; then 
+		kubectl get deploy -n "${nameSpace}"
+	else 
+		kubectl get deploy -n "${nameSpace}" "${param01}"
+	fi	
 }
 
 # 查看 deploy
@@ -334,7 +338,11 @@ deploys() {
 	yello "############ 查看 deploy ###############"
 	tip
 	checkns
-	kubectl get deploy -n "${nameSpace}" "${param01}" -o wide
+	if [ -z "${param01}" ]; then 
+		kubectl get deploy -n "${nameSpace}" -o wide
+	else 
+		kubectl get deploy -n "${nameSpace}" "${param01}" -o wide
+	fi	
 }
 
 # 查看 pods
@@ -381,7 +389,12 @@ svc() {
 	yello "############ 查看 service ###############"
 	tip
 	checkns
-	kubectl get svc -n "${nameSpace}" "${param01}"
+	if [ -z "${param01}" ];then 
+		kubectl get svc -n "${nameSpace}"
+	else 
+		kubectl get svc -n "${nameSpace}" "${param01}"
+	fi
+	
 }
 
 # 查看 service
@@ -389,7 +402,12 @@ svcs() {
 	yello "############ 查看 service ###############"
 	tip
 	checkns
-	kubectl get svc -n "${nameSpace}" "${param01}" -o wide
+	if [ -z "${param01}" ];then 
+		kubectl get svc -n "${nameSpace}" -o wide
+	else
+		kubectl get svc -n "${nameSpace}" "${param01}" -o wide
+	fi
+	
 }
 # 详情查看 deploy
 descDeploy() {
@@ -404,6 +422,7 @@ descPod() {
 	tip
 	checkParam01
 	kubectl describe pod -n "${nameSpace}" "${param01}"
+	
 }
 # 查看 endpoints 列表
 endpoints() {
@@ -424,6 +443,7 @@ descEndpoints() {
 	tip
 	checkParam01
 	kubectl -n "${nameSpace}" describe endpoints "${param01}"
+	
 }
 
 # 查看 daemonsets 列表
@@ -844,10 +864,10 @@ case "X${action}" in
 "Xauto")
 	autoExecPod
 	;;
-"Xlogs")
+"Xlogs"|"Xlog")
 	logsPod
 	;;
-"Xlogsf")
+"Xlogsf"|"Xlogf")
 	logsFpod
 	;;
 "Xall")
