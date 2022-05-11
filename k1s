@@ -25,9 +25,9 @@ savePath=${K1S_PATH}
 ###########################
 # 错误列表，用于删除
 err_list=(
-"UnexpectedAdmissionError"
-"Terminating"
-)	
+	"UnexpectedAdmissionError"
+	"Terminating"
+)
 
 ############内置函数#############
 
@@ -66,8 +66,10 @@ help() {
 	scriptName=$0
 	scriptName=$(basename "${scriptName}")
 	local tools=(
+		"----------------- ↓ ☆ 部署 ↓ -------------------"
 		"开始部署:              ${scriptName} apply {资源名称}"
 		"重新部署:              ${scriptName} reapply {资源名称}"
+		"----------------- ↓ ☀ 列表 ↓ -------------------"
 		"查看 node 列表:        ${scriptName} node|nodes|n|ns"
 		"查看 node 标签:        ${scriptName} label|labels|l|ls"
 		"查看 deploy 列表:      ${scriptName} deploy|deploys|dep|deps|d {资源名称}"
@@ -75,24 +77,33 @@ help() {
 		"查看 service 列表:     ${scriptName} svc|svcs|s|ss {资源名称}"
 		"查看 endpoints 列表:   ${scriptName} ep|eps {资源名称}"
 		"查看 daemonsets 列表:  ${scriptName} ds|dss {资源名称}"
+		"查看 statefulSet 列表: ${scriptName} sts {资源名称}"
+		"查看 all:              ${scriptName} all {资源名称}"
+		"----------------- ↓ ✍ 详情 ↓ -------------------"
 		"查看 node 详情:        ${scriptName} desc-node|desc-nodes|dn|dns {资源名称}"
 		"查看 deploy 详情:      ${scriptName} desc-deploy|dd|dds {资源名称}"
 		"查看 pod 详情:         ${scriptName} desc-pod|dp|dps {资源名称}"
 		"查看 endpoints 详情:   ${scriptName} desc-ep|de|des {资源名称}"
 		"查看 daemonsets 详情:  ${scriptName} desc-ds|desc-dds {资源名称}"
+		"查看 statefulSet 详情: ${scriptName} desc-sts {资源名称}"
+		"----------------- ↓ ♬ YAML ↓ -------------------"
 		"查看 pod YAML:         ${scriptName} yaml-pod|yp {资源名称}"
 		"查看 deploy YAML:      ${scriptName} yaml-deploy|yd {资源名称}"
 		"查看 service YAML:     ${scriptName} yaml-svc|ys {资源名称}"
+		"导出 deploy YAML:      ${scriptName} ex-deploy|ed {资源名称}"
+		"导出 service YAML:     ${scriptName} ex-svc|es {资源名称}"
+		"----------------- ↓ ☯ Pod  ↓ -------------------"
 		"进入 pod 容器:         ${scriptName} exec {POD名称}"
 		"自动进入 pod 容器:     ${scriptName} auto {资源名称}"
 		"查看 pod 日志:         ${scriptName} logs {POD名称}"
 		"监听 pod 日志:         ${scriptName} logsf {POD名称}"
-		"查看 all:              ${scriptName} all {资源名称}"
-		"导出 Deploy YAML:      ${scriptName} ex-deploy|ed {资源名称}"
-		"导出 Service YAML:     ${scriptName} ex-svc|es {资源名称}"
+		"----------------- ↓ ✈ 删除 ↓ -------------------"		
 		"删除 pod 资源:         ${scriptName} rm-pod|rmp {资源名称}"
 		"删除 deploy 应用:      ${scriptName} rm-deploy|rmd {资源名称}"
+		"删除 service 应用:     ${scriptName} rm-svc|rms {资源名称}"
+		"删除 statefulSet 应用: ${scriptName} rm-sts|rmss {资源名称}"		
 		"清理垃圾:              ${scriptName} clean|c {空间名称}"
+		"----------------- ↓ ❤ 帮助 ↓ -------------------"	
 		"查看帮助：             ${scriptName} help|h"
 	)
 	local tips=(
@@ -121,7 +132,7 @@ EOF
 		else
 			inc=${i}
 		fi
-		blue "${inc}. ${name}"
+		blue "${inc}. ${name}"	
 	done
 	echo "TIP:"
 	for name in "${tips[@]}"; do
@@ -326,11 +337,11 @@ deploy() {
 	yello "############ 查看 deploy ###############"
 	tip
 	checkns
-	if [ -z "${param01}" ]; then 
+	if [ -z "${param01}" ]; then
 		kubectl get deploy -n "${nameSpace}"
-	else 
+	else
 		kubectl get deploy -n "${nameSpace}" "${param01}"
-	fi	
+	fi
 }
 
 # 查看 deploy
@@ -338,11 +349,11 @@ deploys() {
 	yello "############ 查看 deploy ###############"
 	tip
 	checkns
-	if [ -z "${param01}" ]; then 
+	if [ -z "${param01}" ]; then
 		kubectl get deploy -n "${nameSpace}" -o wide
-	else 
+	else
 		kubectl get deploy -n "${nameSpace}" "${param01}" -o wide
-	fi	
+	fi
 }
 
 # 查看 pods
@@ -389,12 +400,12 @@ svc() {
 	yello "############ 查看 service ###############"
 	tip
 	checkns
-	if [ -z "${param01}" ];then 
+	if [ -z "${param01}" ]; then
 		kubectl get svc -n "${nameSpace}"
-	else 
+	else
 		kubectl get svc -n "${nameSpace}" "${param01}"
 	fi
-	
+
 }
 
 # 查看 service
@@ -402,12 +413,12 @@ svcs() {
 	yello "############ 查看 service ###############"
 	tip
 	checkns
-	if [ -z "${param01}" ];then 
+	if [ -z "${param01}" ]; then
 		kubectl get svc -n "${nameSpace}" -o wide
 	else
 		kubectl get svc -n "${nameSpace}" "${param01}" -o wide
 	fi
-	
+
 }
 # 详情查看 deploy
 descDeploy() {
@@ -422,7 +433,7 @@ descPod() {
 	tip
 	checkParam01
 	kubectl describe pod -n "${nameSpace}" "${param01}"
-	
+
 }
 # 查看 endpoints 列表
 endpoints() {
@@ -443,7 +454,7 @@ descEndpoints() {
 	tip
 	checkParam01
 	kubectl -n "${nameSpace}" describe endpoints "${param01}"
-	
+
 }
 
 # 查看 daemonsets 列表
@@ -749,11 +760,80 @@ removeDeploy() {
 	fi
 }
 
+# 删除 service
+removeService() {
+	red "############ 正在删除 service 操作！！！ ###############"
+	tip
+	checkns
+	checkParam01
+	# 先判断输入的名称是否存在
+	count=$(kubectl -n "${nameSpace}" get svc | grep -c -w "${param01}")
+	if [ "${count}" -eq 0 ]; then
+		red "service 名称: <${param01}> 不存在，请检查！！！"
+		exit 0
+	fi
+
+	# 存在则提醒是否需要继续删除操作
+	IsYesNo "确定要删除 <${param01}> service 名称吗？"
+	local result=$?
+	if [ ${result} -eq 0 ]; then
+		red "正在删除..."
+		kubectl -n "${nameSpace}" delete svc "${param01}"
+	else
+		green "取消删除操作!"
+	fi
+}
+
+# 删除 statefulSet
+removestatefulSet() {
+	red "############ 正在删除 statefulSet 操作！！！ ###############"
+	tip
+	checkns
+	checkParam01
+	# 先判断输入的名称是否存在
+	count=$(kubectl -n "${nameSpace}" get sts | grep -c -w "${param01}")
+	if [ "${count}" -eq 0 ]; then
+		red "statefulSet 名称: <${param01}> 不存在，请检查！！！"
+		exit 0
+	fi
+
+	# 存在则提醒是否需要继续删除操作
+	IsYesNo "确定要删除 <${param01}> statefulSet 名称吗？"
+	local result=$?
+	if [ ${result} -eq 0 ]; then
+		red "正在删除..."
+		kubectl -n "${nameSpace}" delete sts "${param01}"
+	else
+		green "取消删除操作!"
+	fi
+}
+
+# 查看 statefulSet 资源列表
+statefulSet() {
+	yello "############ 查看 statefulSet 列表 ###############"
+	tip
+	checkns
+	if [ -n "${param01}" ]; then
+		kubectl -n "${nameSpace}" get sts "${param01}"
+	else
+		kubectl -n "${nameSpace}" get sts
+	fi
+}
+
+# 查看 statefulSet 资源列表
+descStatefulSet() {
+	yello "############ 查看 statefulSet 列表 ###############"
+	tip
+	checkns
+	checkParam01
+	kubectl -n "${nameSpace}" describe sts "${param01}"
+}
+
 # 清理垃圾
-clean() {	
+clean() {
 	if [ -n "${param01}" ]; then
 		# local errMsg="UnexpectedAdmissionError"
-		for errMsg in "${err_list[@]}";do
+		for errMsg in "${err_list[@]}"; do
 			IsYesNo "是否查找 ${errMsg} 错误的POD，确认(Y/N):"
 			local result=$?
 			if [ ${result} -eq 0 ]; then
@@ -767,7 +847,7 @@ clean() {
 						for errPodsName in $(kubectl get pods -n "${param01}" | grep "${errMsg}" | awk '{print $1}'); do
 							((i++))
 							red "正在处理: ${i}/${count} ${errPodsName}"
-							kubectl delete pods -n "${param01}" "${errPodsName}"
+							kubectl delete pods -n "${param01}" "${errPodsName}" --grace-period=0 --force
 						done
 					fi
 				else
@@ -777,7 +857,7 @@ clean() {
 		done
 	else
 		# local errMsg="UnexpectedAdmissionError"
-		for errMsg in "${err_list[@]}";do
+		for errMsg in "${err_list[@]}"; do
 			IsYesNo "查找所有空间下的 ${errMsg} 错误的 POD,确认(Y/N):"
 			local result=$?
 			if [ ${result} -eq 0 ]; then
@@ -798,7 +878,7 @@ case "X${action}" in
 "Xreapply")
 	reapply
 	;;
-"Xnode" | "Xn")
+"Xnode" | "Xn" | "Xno")
 	node
 	;;
 "Xnodes" | "Xns")
@@ -813,10 +893,10 @@ case "X${action}" in
 "Xdeploys" | "Xdeps")
 	deploys
 	;;
-"Xpod" | "Xp")
+"Xpod" | "Xpo"| "Xp")
 	pod
 	;;
-"Xpods" | "Xps")
+"Xpods" | "Xpos"| "Xps")
 	pods
 	;;
 "Xsvc" | "Xs")
@@ -830,6 +910,9 @@ case "X${action}" in
 	;;
 "Xds")
 	daemonsets
+;;
+"Xsts")
+	statefulSet
 	;;
 "Xdss")
 	daemonsetsWide
@@ -849,6 +932,9 @@ case "X${action}" in
 "Xdesc-ds" | "Xdesc-dss")
 	descDaemonsets
 	;;
+"Xdesc-sts")
+	descStatefulSet
+	;;	
 "Xyaml-pod" | "Xyaml-pods" | "Xyp" | "Xyps")
 	yamlPod
 	;;
@@ -864,10 +950,10 @@ case "X${action}" in
 "Xauto")
 	autoExecPod
 	;;
-"Xlogs"|"Xlog")
+"Xlogs" | "Xlog")
 	logsPod
 	;;
-"Xlogsf"|"Xlogf")
+"Xlogsf" | "Xlogf")
 	logsFpod
 	;;
 "Xall")
@@ -887,6 +973,12 @@ case "X${action}" in
 "Xrm-deploy" | "Xrmd")
 	removeDeploy
 	;;
+"Xrm-svc" | "Xrms")
+	removeService
+	;;
+"Xrm-sts" | "Xrmss")
+	removestatefulSet
+	;;	
 "Xclean" | "Xc")
 	clean
 	;;
