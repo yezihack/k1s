@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-
 ############################
 # k8s 工具集
 ############################
-
 version=0.1.1
-
 ############参数###########
 # 动作名称
 action=$1
@@ -101,13 +98,13 @@ help() {
 		"自动进入 pod 容器:     ${scriptName} auto {资源名称}"
 		"查看 pod 日志:         ${scriptName} logs {POD名称}"
 		"监听 pod 日志:         ${scriptName} logsf {POD名称}"
-		"----------------- ↓ ✈ 删除 ↓ -------------------"		
+		"----------------- ↓ ✈ 删除 ↓ -------------------"
 		"删除 pod 资源:         ${scriptName} rm-pod|rmp {资源名称}"
 		"删除 deploy 应用:      ${scriptName} rm-deploy|rmd {资源名称}"
 		"删除 service 应用:     ${scriptName} rm-svc|rms {资源名称}"
-		"删除 statefulSet 应用: ${scriptName} rm-sts|rmss {资源名称}"		
+		"删除 statefulSet 应用: ${scriptName} rm-sts|rmss {资源名称}"
 		"清理垃圾:              ${scriptName} clean|c {空间名称}"
-		"----------------- ↓ ❤ 帮助 ↓ -------------------"	
+		"----------------- ↓ ❤ 帮助 ↓ -------------------"
 		"查看帮助：             ${scriptName} help|h"
 	)
 	local tips=(
@@ -136,14 +133,14 @@ EOF
 		else
 			inc=${i}
 		fi
-		line_count=$(echo "${name}"|grep -c "↓")
-		if [ "${line_count}" -gt 0 ]; then 
-			i=0		
-			yello "${name}"	
-		else 			
+		line_count=$(echo "${name}" | grep -c "↓")
+		if [ "${line_count}" -gt 0 ]; then
+			i=0
+			yello "${name}"
+		else
 			cyan "${inc}. ${name}"
 		fi
-			
+
 	done
 	echo "TIP:"
 	for name in "${tips[@]}"; do
@@ -234,13 +231,13 @@ check() {
 	## 检查应用文件是否存在
 	### 判断是否存在后缀，如果存在后缀，就不添加后缀
 	suffix=${param01##*.}
-	if [ -n "${suffix}" ]; then 
+	if [ -n "${suffix}" ]; then
 		fullFile="${savePath}${param01}"
-	else 
+	else
 		# 默认添加 .yaml 后缀
 		fullFile="${savePath}${param01}.yaml"
 	fi
-	
+
 	if [ ! -f "${fullFile}" ]; then
 		red "${fullFile} 文件不存在，请检查"
 		exit 1
@@ -381,7 +378,7 @@ pod() {
 	tip
 	checkns
 	if [ -n "${param01}" ]; then
-		if [[ "${param01}" = "w" ]]; then
+		if [[ ${param01} == "w" ]]; then
 			green "正在监听 pods 应用:"
 			kubectl get pods -n "${nameSpace}" -w
 		elif [ -n "${param02}" ] && [ "${param02}" = "w" ]; then
@@ -401,7 +398,7 @@ pods() {
 	tip
 	checkns
 	if [ -n "${param01}" ]; then
-		if [[ "${param01}" = "w" ]]; then
+		if [[ ${param01} == "w" ]]; then
 			green "正在监听 pods 应用:"
 			kubectl get pods -n "${nameSpace}" -owide -w
 		elif [ -n "${param02}" ] && [ "${param02}" = "w" ]; then
@@ -918,10 +915,10 @@ case "X${action}" in
 "Xdeploys" | "Xdeps")
 	deploys
 	;;
-"Xpod" | "Xpo"| "Xp")
+"Xpod" | "Xpo" | "Xp")
 	pod
 	;;
-"Xpods" | "Xpos"| "Xps")
+"Xpods" | "Xpos" | "Xps")
 	pods
 	;;
 "Xsvc" | "Xs")
@@ -935,7 +932,7 @@ case "X${action}" in
 	;;
 "Xds")
 	daemonsets
-;;
+	;;
 "Xsts")
 	statefulSet
 	;;
@@ -959,7 +956,7 @@ case "X${action}" in
 	;;
 "Xdesc-sts")
 	descStatefulSet
-	;;	
+	;;
 "Xyaml-pod" | "Xyaml-pods" | "Xyp" | "Xyps")
 	yamlPod
 	;;
@@ -1003,7 +1000,7 @@ case "X${action}" in
 	;;
 "Xrm-sts" | "Xrmss")
 	removestatefulSet
-	;;	
+	;;
 "Xclean" | "Xc")
 	clean
 	;;
