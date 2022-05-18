@@ -52,6 +52,7 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 删除 deploy 应用 (rm-deploy|rmd)
 - 删除 service 应用 (rm-svc|rms)
 - 删除 statefulSet 应用 (rm-sts|rmss)
+- 查看 top 资源负载 (top) *
 - 清理垃圾(clean)
 
 ## 安装

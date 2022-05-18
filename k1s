@@ -4,7 +4,7 @@
 # k8s 工具集
 ############################
 
-version=0.0.2
+version=0.1.1
 
 ############参数###########
 # 动作名称
@@ -61,7 +61,11 @@ blue() {
 	local val=$1
 	echo -e "\033[34m ${val} \033[0m"
 }
-
+# 青绿色
+cyan() {
+	local val=$1
+	echo -e "\033[36m ${val} \033[0m"
+}
 help() {
 	scriptName=$0
 	scriptName=$(basename "${scriptName}")
@@ -73,7 +77,7 @@ help() {
 		"查看 node 列表:        ${scriptName} node|nodes|n|ns"
 		"查看 node 标签:        ${scriptName} label|labels|l|ls"
 		"查看 deploy 列表:      ${scriptName} deploy|deploys|dep|deps|d {资源名称}"
-		"查看 pod 列表:         ${scriptName} pod|pods|p|ps {资源名称} [监听(w)]"
+		"查看 pod 列表:         ${scriptName} pod|pods|p|po|ps {资源名称} [监听(w)]"
 		"查看 service 列表:     ${scriptName} svc|svcs|s|ss {资源名称}"
 		"查看 endpoints 列表:   ${scriptName} ep|eps {资源名称}"
 		"查看 daemonsets 列表:  ${scriptName} ds|dss {资源名称}"
@@ -132,7 +136,14 @@ EOF
 		else
 			inc=${i}
 		fi
-		blue "${inc}. ${name}"	
+		line_count=$(echo "${name}"|grep -c "↓")
+		if [ "${line_count}" -gt 0 ]; then 
+			i=0		
+			yello "${name}"	
+		else 			
+			cyan "${inc}. ${name}"
+		fi
+			
 	done
 	echo "TIP:"
 	for name in "${tips[@]}"; do
@@ -221,7 +232,15 @@ check() {
 	fi
 
 	## 检查应用文件是否存在
-	fullFile="${savePath}${param01}.yaml"
+	### 判断是否存在后缀，如果存在后缀，就不添加后缀
+	suffix=${param01##*.}
+	if [ -n "${suffix}" ]; then 
+		fullFile="${savePath}${param01}"
+	else 
+		# 默认添加 .yaml 后缀
+		fullFile="${savePath}${param01}.yaml"
+	fi
+	
 	if [ ! -f "${fullFile}" ]; then
 		red "${fullFile} 文件不存在，请检查"
 		exit 1
@@ -362,7 +381,10 @@ pod() {
 	tip
 	checkns
 	if [ -n "${param01}" ]; then
-		if [ -n "${param02}" ] && [ "${param02}" = "w" ]; then
+		if [[ "${param01}" = "w" ]]; then
+			green "正在监听 pods 应用:"
+			kubectl get pods -n "${nameSpace}" -w
+		elif [ -n "${param02}" ] && [ "${param02}" = "w" ]; then
 			green "正在监听 <${param01}> 应用:"
 			kubectl get pods -n "${nameSpace}" -w | grep "${param01}"
 		else
@@ -379,11 +401,14 @@ pods() {
 	tip
 	checkns
 	if [ -n "${param01}" ]; then
-		if [ -n "${param02}" ] && [ "${param02}" = "w" ]; then
+		if [[ "${param01}" = "w" ]]; then
+			green "正在监听 pods 应用:"
+			kubectl get pods -n "${nameSpace}" -owide -w
+		elif [ -n "${param02}" ] && [ "${param02}" = "w" ]; then
 			green "正在监听 <${param01}> 应用:"
-			kubectl get pods -n "${nameSpace}" -w -o wide | grep "${param01}"
+			kubectl get pods -n "${nameSpace}" -w -owide | grep "${param01}"
 		else
-			kubectl get pods -n "${nameSpace}" -o wide | grep "${param01}"
+			kubectl get pods -n "${nameSpace}" -owide | grep "${param01}"
 		fi
 
 	else
