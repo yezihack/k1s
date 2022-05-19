@@ -10,10 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Run the sh-checker
-        uses: luizm/action-sh-checker@master
+        uses: luizm/action-sh-checker@v0.1.8
         env:
-          # SHELLCHECK_OPTS: -e SC1004 # exclude some shellcheck warnings.
-          SHFMT_OPTS: -s # arguments to shfmt.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Optional if sh_checker_comment is false.
+          SHELLCHECK_OPTS: -e SC1004 # Optional: exclude some shellcheck warnings.
+          SHFMT_OPTS: -s # Optional: pass arguments to shfmt.
         with:
-          sh_checker_comment: false
+          sh_checker_comment: true
           sh_checker_exclude: ".terraform ^dir/example.sh"
