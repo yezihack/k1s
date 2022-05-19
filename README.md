@@ -1,3 +1,4 @@
+[![check-script by k1s](https://github.com/yezihack/k1s/actions/workflows/main.yml/badge.svg)](https://github.com/yezihack/k1s/actions/workflows/main.yml)
 [![k1s](https://img.shields.io/badge/kubernetes-k1s-green?style=flat-square&logo=appveyor)](https://github.com/yezihack/k1s)
 [![GitHub license](https://img.shields.io/github/license/yezihack/k1s?style=flat-square&logo=appveyor)](https://github.com/yezihack/k1s/blob/master/LICENSE)
 

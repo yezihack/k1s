@@ -2,7 +2,7 @@
 ############################
 # k8s 工具集
 ############################
-version=0.1.1
+version=0.1.2
 ############参数###########
 # 动作名称
 action=$1
@@ -67,7 +67,7 @@ help() {
 	scriptName=$0
 	scriptName=$(basename "${scriptName}")
 	local tools=(
-		"----------------- ↓ ☆ 部署 ↓ -------------------"
+		"----------------- ↓ ☆ 部署 ↓ ------------------"
 		"开始部署:              ${scriptName} apply {资源名称}"
 		"重新部署:              ${scriptName} reapply {资源名称}"
 		"----------------- ↓ ☀ 列表 ↓ -------------------"
@@ -230,13 +230,14 @@ check() {
 
 	## 检查应用文件是否存在
 	### 判断是否存在后缀，如果存在后缀，就不添加后缀
-	suffix=${param01##*.}
-	if [ -n "${suffix}" ]; then
+	gapCount=$(echo "${name}"|grep -c ".")
+	if [ "${gapCount}" -gt 0 ]; then
 		fullFile="${savePath}${param01}"
-	else
+	else 
 		# 默认添加 .yaml 后缀
 		fullFile="${savePath}${param01}.yaml"
 	fi
+	
 
 	if [ ! -f "${fullFile}" ]; then
 		red "${fullFile} 文件不存在，请检查"
