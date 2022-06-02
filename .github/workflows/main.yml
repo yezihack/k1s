@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Run the sh-checker
-        uses: luizm/action-sh-checker@v0.1.8
+        uses: luizm/action-sh-checker@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Optional if sh_checker_comment is false.
           SHELLCHECK_OPTS: -e SC1004 # Optional: exclude some shellcheck warnings.

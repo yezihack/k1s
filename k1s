@@ -2,7 +2,7 @@
 ############################
 # k8s 工具集
 ############################
-version=0.1.2
+version=0.1.3
 ############参数###########
 # 动作名称
 action=$1
@@ -33,9 +33,9 @@ alert() {
 	local val=$1
 	local ret=$?
 	if [[ ${ret} -eq 0 ]]; then
-		echo -e "\033[32m ${val} 成功 \033[0m"
+		yello "${val} 成功"
 	else
-		echo -e "\033[31m ${val} 失败 \033[0m"
+		red "${val} 失败"
 	fi
 }
 # 提示
@@ -116,7 +116,7 @@ help() {
 		"2. 当前操作的空间名：${nameSpace}"
 	)
 	cat <<EOF
-     __    ____        
+   ⎈ __    ____ ⎈       
 |  | _/_   | ______
 |  |/ /|   |/  ___/
 |    < |   |\___ \ 
@@ -230,9 +230,10 @@ check() {
 
 	## 检查应用文件是否存在
 	### 判断是否存在后缀，如果存在后缀，就不添加后缀
-	gapCount=$(echo "${name}" | grep -c ".")
+	gapCount=$(echo "${param01}" | grep -c "\.")
 	if [ "${gapCount}" -gt 0 ]; then
 		fullFile="${savePath}${param01}"
+		param01=$(echo "${param01}"| cut -d . -f1)
 	else
 		# 默认添加 .yaml 后缀
 		fullFile="${savePath}${param01}.yaml"
@@ -748,7 +749,7 @@ removePods() {
 	fi
 
 	# 存在则提醒是否需要继续删除操作
-	IsYesNo "确定要删除 <${param01}> POD名称吗？"
+	IsYesNo "确定要删除 <${param01}> POD名称吗？(Y/N):"
 	local ret=$?
 	if [ ${ret} -eq 0 ]; then
 		red "正在删除..."
@@ -772,7 +773,7 @@ removeDeploy() {
 	fi
 
 	# 存在则提醒是否需要继续删除操作
-	IsYesNo "确定要删除 <${param01}> Deploy 名称吗？"
+	IsYesNo "确定要删除 <${param01}> Deploy 名称吗？(Y/N):"
 	local result=$?
 	if [ ${result} -eq 0 ]; then
 		red "正在删除..."
@@ -796,7 +797,7 @@ removeService() {
 	fi
 
 	# 存在则提醒是否需要继续删除操作
-	IsYesNo "确定要删除 <${param01}> service 名称吗？"
+	IsYesNo "确定要删除 <${param01}> service 名称吗？(Y/N):"
 	local result=$?
 	if [ ${result} -eq 0 ]; then
 		red "正在删除..."
@@ -820,11 +821,35 @@ removestatefulSet() {
 	fi
 
 	# 存在则提醒是否需要继续删除操作
-	IsYesNo "确定要删除 <${param01}> statefulSet 名称吗？"
+	IsYesNo "确定要删除 <${param01}> statefulSet 名称吗？(Y/N):"
 	local result=$?
 	if [ ${result} -eq 0 ]; then
 		red "正在删除..."
 		kubectl -n "${nameSpace}" delete sts "${param01}"
+	else
+		green "取消删除操作!"
+	fi
+}
+
+# 删除 daemonSet
+removedaemonSet() {
+	red "############ 正在删除 daemonSet 操作！！！ ###############"
+	tip
+	checkns
+	checkParam01
+	# 先判断输入的名称是否存在
+	count=$(kubectl -n "${nameSpace}" get ds | grep -c -w "${param01}")
+	if [ "${count}" -eq 0 ]; then
+		red "daemonSet 名称: <${param01}> 不存在，请检查！！！"
+		exit 0
+	fi
+
+	# 存在则提醒是否需要继续删除操作
+	IsYesNo "确定要删除 <${param01}> daemonSet 名称吗？(Y/N):"
+	local result=$?
+	if [ ${result} -eq 0 ]; then
+		red "正在删除..."
+		kubectl -n "${nameSpace}" delete ds "${param01}"
 	else
 		green "取消删除操作!"
 	fi
@@ -885,8 +910,10 @@ clean() {
 			if [ ${result} -eq 0 ]; then
 				green "正在统计不同空间下的 ${errMsg} 数据："
 				kubectl get pods -A | grep "${errMsg}" | awk '{print $1}' | uniq -c
+				
 			fi
 		done
+		yello "若想删除以上统计的错误,则使用 k1s clean <空间名称>"
 	fi
 }
 
@@ -1000,6 +1027,9 @@ case "X${action}" in
 	;;
 "Xrm-sts" | "Xrmss")
 	removestatefulSet
+	;;
+"Xrm-ds" | "Xrmds")
+	removedaemonSet
 	;;
 "Xclean" | "Xc")
 	clean

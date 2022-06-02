@@ -49,10 +49,11 @@ k1s 主要是用于 kubernetes 管理的命令行工具。
 - 监听 pod 日志（logf|logsf）
 - 查看 deploy, servier, pod 三种资源（all）
 - 导出 deploy YAML（ex-deploy）
-- 删除 pod 资源 (rm-pod|rm-pods)
+- 删除 pod 资源 (rm-pod|rm-pods|rmp)
 - 删除 deploy 应用 (rm-deploy|rmd)
 - 删除 service 应用 (rm-svc|rms)
 - 删除 statefulSet 应用 (rm-sts|rmss)
+- 删除 daemonSet 应用 (rm-ds|rmds)*
 - 查看 top 资源负载 (top) *
 - 清理垃圾(clean)
 
