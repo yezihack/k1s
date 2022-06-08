@@ -2,7 +2,7 @@
 ############################
 # k8s 工具集
 ############################
-version=0.1.3
+version=0.1.4
 ############参数###########
 # 动作名称
 action=$1
@@ -74,7 +74,7 @@ help() {
 		"查看 node 列表:        ${scriptName} node|nodes|n|ns"
 		"查看 node 标签:        ${scriptName} label|labels|l|ls"
 		"查看 deploy 列表:      ${scriptName} deploy|deploys|dep|deps|d {资源名称}"
-		"查看 pod 列表:         ${scriptName} pod|pods|p|po|ps {资源名称} [监听(w)]"
+		"查看 pod 列表:         ${scriptName} pod|pods|p|po|ps {资源名称} [监听(w)|yaml(yml|y)]"
 		"查看 service 列表:     ${scriptName} svc|svcs|s|ss {资源名称}"
 		"查看 endpoints 列表:   ${scriptName} ep|eps {资源名称}"
 		"查看 daemonsets 列表:  ${scriptName} ds|dss {资源名称}"
@@ -356,8 +356,20 @@ deploy() {
 	checkns
 	if [ -z "${param01}" ]; then
 		kubectl get deploy -n "${nameSpace}"
-	else
-		kubectl get deploy -n "${nameSpace}" "${param01}"
+	else		
+		case "X${param02}" in
+			"Xw")
+				green "正在监听 <${param01}> 应用:"
+				kubectl get deploy -n "${nameSpace}" -w | grep "${param01}"
+				;;
+			"Xy" | "Xyml" | "Xyaml")
+				green "查看 YAML <${param01}> 应用:"
+				kubectl get deploy -n "${nameSpace}" "${param01}" -oyaml
+			;;
+			*)
+				kubectl get deploy -n "${nameSpace}" "${param01}"
+			;;
+		esac
 	fi
 }
 
@@ -369,7 +381,26 @@ deploys() {
 	if [ -z "${param01}" ]; then
 		kubectl get deploy -n "${nameSpace}" -o wide
 	else
-		kubectl get deploy -n "${nameSpace}" "${param01}" -o wide
+		if [[ ${param01} == "w" ]]; then
+			green "正在监听 deploy 应用:"
+			kubectl get deploy -n "${nameSpace}" -owide -w
+		elif [ -n "${param02}" ];then
+			case "X${param02}" in
+				"Xw")
+					green "正在监听 <${param01}> 应用:"
+					kubectl get deploy -n "${nameSpace}" -w -owide | grep "${param01}"
+					;;
+				"Xy" | "Xyml" | "Xyaml")
+					green "查看 YAML <${param01}> 应用:"
+					kubectl get deploy -n "${nameSpace}" "${param01}" -oyaml
+				;;
+				*)
+					red "不支持操作！！！"
+				;;
+			esac
+		else
+			kubectl get deploy -n "${nameSpace}" -owide | grep "${param01}"
+		fi
 	fi
 }
 
@@ -388,7 +419,6 @@ pod() {
 		else
 			kubectl get pods -n "${nameSpace}" | grep "${param01}"
 		fi
-
 	else
 		kubectl get pods -n "${nameSpace}"
 	fi
@@ -402,20 +432,29 @@ pods() {
 		if [[ ${param01} == "w" ]]; then
 			green "正在监听 pods 应用:"
 			kubectl get pods -n "${nameSpace}" -owide -w
-		elif [ -n "${param02}" ] && [ "${param02}" = "w" ]; then
-			green "正在监听 <${param01}> 应用:"
-			kubectl get pods -n "${nameSpace}" -w -owide | grep "${param01}"
+		elif [ -n "${param02}" ];then 
+			case "X${param02}" in
+				"Xw")
+					green "正在监听 <${param01}> 应用:"
+					kubectl get pods -n "${nameSpace}" -w -owide | grep "${param01}"
+					;;
+				"Xy" | "Xyml" | "Xyaml")
+					green "查看 YAML <${param01}> 应用:"
+					kubectl get pods -n "${nameSpace}" "${param01}" -oyaml
+				;;
+				*)
+					red "不支持操作！！！"
+				;;
+			esac
 		else
 			kubectl get pods -n "${nameSpace}" -owide | grep "${param01}"
 		fi
-
 	else
 		if [ -n "${param01}" ] && [ "${param01}" = "w" ]; then
 			kubectl get pods -n "${nameSpace}" -o wide -w
 		else
 			kubectl get pods -n "${nameSpace}" -o wide
 		fi
-
 	fi
 }
 # 查看 service
@@ -428,7 +467,6 @@ svc() {
 	else
 		kubectl get svc -n "${nameSpace}" "${param01}"
 	fi
-
 }
 
 # 查看 service

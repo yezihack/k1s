@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v0.1.4
+
+- pod, deploy 查看时添加第二个参数，yaml|yml|y 查看yaml信息
+
 ## v0.1.3
 
 - 修复 reapply 判断点异常
