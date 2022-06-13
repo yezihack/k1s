@@ -579,7 +579,7 @@ ingress() {
 				kubectl -n "${nameSpace}" get ing "${param01}" -oyaml
 				;;
 			*)
-				red "action02: ${param02} 不支持操作！！！"
+				red "param02: ${param02} 不支持操作！！！"
 				;;
 			esac
 		else
