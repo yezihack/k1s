@@ -79,6 +79,7 @@ help() {
 		"查看 endpoints 列表:   ${scriptName} ep|eps {资源名称}"
 		"查看 daemonsets 列表:  ${scriptName} ds|dss {资源名称}"
 		"查看 statefulSet 列表: ${scriptName} sts {资源名称}"
+		"查看 ingress 资源: 	${scriptName} ingress|ing {资源名称} [监听(w)、详情(desc)、yaml(yml|y)]"
 		"查看 all:              ${scriptName} all {资源名称}"
 		"----------------- ↓ ✍ 详情 ↓ -------------------"
 		"查看 node 详情:        ${scriptName} desc-node|desc-nodes|dn|dns {资源名称}"
@@ -96,8 +97,8 @@ help() {
 		"----------------- ↓ ☯ Pod  ↓ -------------------"
 		"进入 pod 容器:         ${scriptName} exec {POD名称}"
 		"自动进入 pod 容器:     ${scriptName} auto {资源名称}"
-		"查看 pod 日志:         ${scriptName} logs {POD名称}"
-		"监听 pod 日志:         ${scriptName} logsf {POD名称}"
+		"查看 pod 日志:         ${scriptName} logs|log {POD名称}"
+		"监听 pod 日志:         ${scriptName} logsf|logf {POD名称}"
 		"----------------- ↓ ✈ 删除 ↓ -------------------"
 		"删除 pod 资源:         ${scriptName} rm-pod|rmp {资源名称}"
 		"删除 deploy 应用:      ${scriptName} rm-deploy|rmd {资源名称}"
@@ -233,7 +234,7 @@ check() {
 	gapCount=$(echo "${param01}" | grep -c "\.")
 	if [ "${gapCount}" -gt 0 ]; then
 		fullFile="${savePath}${param01}"
-		param01=$(echo "${param01}"| cut -d . -f1)
+		param01=$(echo "${param01}" | cut -d . -f1)
 	else
 		# 默认添加 .yaml 后缀
 		fullFile="${savePath}${param01}.yaml"
@@ -356,18 +357,18 @@ deploy() {
 	checkns
 	if [ -z "${param01}" ]; then
 		kubectl get deploy -n "${nameSpace}"
-	else		
+	else
 		case "X${param02}" in
-			"Xw")
-				green "正在监听 <${param01}> 应用:"
-				kubectl get deploy -n "${nameSpace}" -w | grep "${param01}"
-				;;
-			"Xy" | "Xyml" | "Xyaml")
-				green "查看 YAML <${param01}> 应用:"
-				kubectl get deploy -n "${nameSpace}" "${param01}" -oyaml
+		"Xw")
+			green "正在监听 <${param01}> 应用:"
+			kubectl get deploy -n "${nameSpace}" -w | grep "${param01}"
 			;;
-			*)
-				kubectl get deploy -n "${nameSpace}" "${param01}"
+		"Xy" | "Xyml" | "Xyaml")
+			green "查看 YAML <${param01}> 应用:"
+			kubectl get deploy -n "${nameSpace}" "${param01}" -oyaml
+			;;
+		*)
+			kubectl get deploy -n "${nameSpace}" "${param01}"
 			;;
 		esac
 	fi
@@ -384,18 +385,18 @@ deploys() {
 		if [[ ${param01} == "w" ]]; then
 			green "正在监听 deploy 应用:"
 			kubectl get deploy -n "${nameSpace}" -owide -w
-		elif [ -n "${param02}" ];then
+		elif [ -n "${param02}" ]; then
 			case "X${param02}" in
-				"Xw")
-					green "正在监听 <${param01}> 应用:"
-					kubectl get deploy -n "${nameSpace}" -w -owide | grep "${param01}"
-					;;
-				"Xy" | "Xyml" | "Xyaml")
-					green "查看 YAML <${param01}> 应用:"
-					kubectl get deploy -n "${nameSpace}" "${param01}" -oyaml
+			"Xw")
+				green "正在监听 <${param01}> 应用:"
+				kubectl get deploy -n "${nameSpace}" -w -owide | grep "${param01}"
 				;;
-				*)
-					red "不支持操作！！！"
+			"Xy" | "Xyml" | "Xyaml")
+				green "查看 YAML <${param01}> 应用:"
+				kubectl get deploy -n "${nameSpace}" "${param01}" -oyaml
+				;;
+			*)
+				red "不支持操作！！！"
 				;;
 			esac
 		else
@@ -432,18 +433,18 @@ pods() {
 		if [[ ${param01} == "w" ]]; then
 			green "正在监听 pods 应用:"
 			kubectl get pods -n "${nameSpace}" -owide -w
-		elif [ -n "${param02}" ];then 
+		elif [ -n "${param02}" ]; then
 			case "X${param02}" in
-				"Xw")
-					green "正在监听 <${param01}> 应用:"
-					kubectl get pods -n "${nameSpace}" -w -owide | grep "${param01}"
-					;;
-				"Xy" | "Xyml" | "Xyaml")
-					green "查看 YAML <${param01}> 应用:"
-					kubectl get pods -n "${nameSpace}" "${param01}" -oyaml
+			"Xw")
+				green "正在监听 <${param01}> 应用:"
+				kubectl get pods -n "${nameSpace}" -w -owide | grep "${param01}"
 				;;
-				*)
-					red "不支持操作！！！"
+			"Xy" | "Xyml" | "Xyaml")
+				green "查看 YAML <${param01}> 应用:"
+				kubectl get pods -n "${nameSpace}" "${param01}" -oyaml
+				;;
+			*)
+				red "不支持操作！！！"
 				;;
 			esac
 		else
@@ -548,6 +549,47 @@ descDaemonsets() {
 	checkParam01
 	kubectl -n "${nameSpace}" describe ds "${param01}"
 }
+
+# 查看 ingress (本空间)
+ingress() {
+	yello "############ 查看 Ingress 列表 ###############"
+	tip
+	# param01 遇到 w 则开启监听状态
+	if [ "${param01}" = "w" ]; then
+		green "正在监听 Ingress <${param01}> 应用:"
+		kubectl -n "${nameSpace}" get ing -w
+	elif [ "${param01}" = "y" ] || [ "${param01}" = "yml" ] || [ "${param01}" = "yaml" ]; then
+		green "查看 Ingress <${param01}> 应用 YAML:"
+		kubectl -n "${nameSpace}" get ing -oyaml
+	# 处理第一个参数
+	elif [ -n "${param01}" ]; then
+		# 处理第二个参数
+		if [ -n "${param02}" ]; then 
+			case "X${param02}" in
+			"Xw")
+				green "正在监听 Ingress <${param01}> 应用:"
+				kubectl -n "${nameSpace}" get ing -w | grep "${param01}"
+				;;
+			"Xdesc")
+				green "查看 Ingress <${param01}> 详情:"
+				kubectl -n "${nameSpace}" describe ing "${param01}"
+				;;
+			"Xy" | "Xyml" | "Xyaml")
+				green "查看 Ingress <${param01}> 应用 YAML:"
+				kubectl -n "${nameSpace}" get ing "${param01}" -oyaml
+				;;
+			*)
+				red "action02: ${param02} 不支持操作！！！"
+				;;
+			esac
+		else
+			kubectl -n "${nameSpace}" get ing | grep "${param01}"
+		fi
+	else
+		kubectl -n "${nameSpace}" get ing
+	fi
+}
+
 # 进入容器
 execPod() {
 	yello "############ 进入 ${param01} pod 容器 ###############"
@@ -948,7 +990,7 @@ clean() {
 			if [ ${result} -eq 0 ]; then
 				green "正在统计不同空间下的 ${errMsg} 数据："
 				kubectl get pods -A | grep "${errMsg}" | awk '{print $1}' | uniq -c
-				
+
 			fi
 		done
 		yello "若想删除以上统计的错误,则使用 k1s clean <空间名称>"
@@ -1000,6 +1042,9 @@ case "X${action}" in
 	;;
 "Xsts")
 	statefulSet
+	;;
+"Xing" | "Xingress")
+	ingress
 	;;
 "Xdss")
 	daemonsetsWide

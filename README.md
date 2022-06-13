@@ -2,7 +2,7 @@
 [![k1s](https://img.shields.io/badge/kubernetes-k1s-green?style=flat-square&logo=appveyor)](https://github.com/yezihack/k1s)
 [![GitHub license](https://img.shields.io/github/license/yezihack/k1s?style=flat-square&logo=appveyor)](https://github.com/yezihack/k1s/blob/master/LICENSE)
 
-# k1s: kubernetes 快捷操作的辅助工具
+# 1. k1s: kubernetes 快捷操作的辅助工具
 
 ```text
      __    ____        
@@ -15,51 +15,13 @@
 
 ![](asset/k1s.gif)
 
-## 什么是k1s
+## 1.1. 什么是k1s
 
 k1s 主要是用于 kubernetes 管理的命令行工具。
 
-## 功能
+## 1.2. 安装
 
-- 查看Nodes（nodes）
-- 部署应用资源（apply）
-- 重新部署应用资源（reapply）
-- 查看 deploy 资源应用列表（deploy/deploys）
-- 查看 pod 资源列表（p|ps|po|pos|pod/pods|）[监听(w)]
-- 查看 service 资源列表（svc/svcs）
-- 查看 endpoints 资源列表（ep/eps）
-- 查看 daemonsets 资源列表（ds/dss）
-- 查看 statefulSet 资源列表（sts）
-- 查看 ingress 资源列表（ing|ingress) *
-- 查看 pv 资源列表（pv) *
-- 查看 pvc 资源列表（pvc) *
-- 查看 node 资源详情（desc-node）
-- 查看 deploy 资源详情（desc-deploy）
-- 查看 pod 资源详情（desc-pod）
-- 查看 endpoints 资源详情（desc-ep）
-- 查看 daemonsets 资源详情（desc-ds）
-- 查看 statefulSet 资源详情（desc-sts）
-- 查看 ingress 资源详情（desc-ing）*
-- 查看 pod YAML（yaml-pod）
-- 查看 deploy YAML（yaml-deploy）
-- 查看 service YAML（yaml-svc）
-- 进入 pod 容器（exec）
-- 自动进入 pod 容器（auto）
-- 查看 pod 日志（log|logs）
-- 监听 pod 日志（logf|logsf）
-- 查看 deploy, servier, pod 三种资源（all）
-- 导出 deploy YAML（ex-deploy）
-- 删除 pod 资源 (rm-pod|rm-pods|rmp)
-- 删除 deploy 应用 (rm-deploy|rmd)
-- 删除 service 应用 (rm-svc|rms)
-- 删除 statefulSet 应用 (rm-sts|rmss)
-- 删除 daemonSet 应用 (rm-ds|rmds)*
-- 查看 top 资源负载 (top) *
-- 清理垃圾(clean)
-
-## 安装
-
-直接下载脚本，依赖 kubectl, 其它无须任何。
+直接下载脚本，仅依赖 kubectl。
 
 ```sh
 wget https://raw.githubusercontent.com/yezihack/k1s/master/k1s
@@ -67,7 +29,74 @@ chmod +x k1s
 mv k1s /usr/local/bin
 ```
 
-## 使用方法
+## 1.3. 功能
+
+命令格式：
+
+```sh
+k1s action <param01> <param02>
+```
+
+### 1.3.1. ☆ 部署
+
+- 开始部署  (apply)
+- 重新部署  (reapply)
+
+### 1.3.2. ☀ 列表
+
+- 查看 node 列表              ( node|nodes|n|ns)
+- 查看 node 标签              ( label|labels|l|ls)
+- 查看 deploy 列表           (deploy|deploys|dep|deps|d )
+- 查看 pod 列表                (pod|pods|p|po|ps  [监听(w)|yaml(yml|y)])
+- 查看 service 列表           (svc|svcs|s|ss )
+- 查看 endpoints 列表      (ep|eps )
+- 查看 daemonsets 列表   (ds|dss )
+- 查看 statefulSet 列表     (sts)
+- 查看 ingress) 资源列表    (ingress|ing [监听(w)、详情(desc)、yaml(yml|y)])
+- 查看 pv 资源列表            (pv) *
+- 查看 pvc 资源列表          (pvc) *
+- 查看 all                          (all )
+
+### 1.3.3. ✍ 详情
+
+- 查看 node 详情         (desc-node|desc-nodes|dn|dns )
+- 查看 deploy 详情       (desc-deploy|dd|dds )
+- 查看 pod 详情     (desc-pod|dp|dps )
+- 查看 endpoints 详情    (desc-ep|de|des )
+- 查看 daemonsets 详情   (desc-ds|desc-dds )
+- 查看 statefulSet 详情  (desc-sts )
+- 查看 ingress 资源详情 (desc-ing）*
+
+### 1.3.4. ♬ YAML
+
+- 查看 pod YAML          (yaml-pod|yp )
+- 查看 deploy YAML       (yaml-deploy|yd )
+- 查看 service YAML      (yaml-svc|ys )
+- 导出 deploy YAML       (ex-deploy|ed )
+- 导出 service YAML      (ex-svc|es )
+
+### 1.3.5. ☯ Pod
+
+- 进入 pod 容器               (exec )
+- 自动进入 pod 容器      (auto)
+- 查看 pod 日志          (logs|log)
+- 监听 pod 日志         (logsf|logf)
+
+### 1.3.6. ✈ 删除
+
+- 删除 pod 资源          (rm-pod|rmp)
+- 删除 deploy 应用       (rm-deploy|rmd)
+- 删除 service 应用           (rm-svc|rms )
+- 删除 statefulSet 应用       （rm-sts|rmss)
+- 删除 daemonSet 应用    (rm-ds|rmds)*
+- 清理垃圾                    (clean|c {空间名称})
+
+### 1.3.7. ❤ 帮助
+
+- 查看 top 资源负载 (top) *
+- 查看帮助  (help|h)
+
+## 1.4. 使用方法
 
 K1S脚本直接在计算机上运行。它具有以下命令行界面：
 
@@ -88,7 +117,7 @@ k1s [操作类型] [资源名称]
 - 操作类型 是必选
 - 资源名称 是可选
 
-### 使用实例
+### 1.4.1. 使用实例
 
 假设需要部署的应用名称: nginx-test.yaml  
 
