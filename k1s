@@ -24,6 +24,7 @@ savePath=${K1S_PATH}
 err_list=(
 	"UnexpectedAdmissionError"
 	"Terminating"
+	"OutOfcpu"
 )
 
 ############内置函数#############
