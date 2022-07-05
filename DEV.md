@@ -1,5 +1,4 @@
-
-# 1. k1s: kubernetes 快捷操作的辅助工具
+# 1. k1s: kubectl 辅助工具
 
 ```text
      __    ____        
@@ -14,7 +13,7 @@
 
 ## 1.1. 什么是k1s
 
-k1s 主要是用于 kubernetes 管理的命令行工具。
+k1s 主要是用于 kubernetes 管理的命令行工具。对 kubectl 命令实现快捷操作。
 
 ## 1.2. 安装
 
@@ -31,10 +30,19 @@ mv k1s /usr/local/bin
 命令格式：
 
 ```sh
+#  环境变量
 k1s resources <param> action
 ```
 
-### Resources 列表
+### 1.3.1. Resources 列表(扩展功能)
+
+| No  | Name    | Describe     |
+| --- | ------- | ------------ |
+| 1   | apply   | 开始部署     |
+| 2   | reapply | 重新部署     |
+| 3   | clean   | 清理无用 Pod |
+
+### 1.3.2. Resources 列表(系统对应)
 
 > 资源(Resources) 列表详情, 与 api-resources 显示一致,未全列出,只列出常用的资源名称.
 
@@ -69,6 +77,46 @@ k1s resources <param> action
 | 27  | rolebindings             | rb        | RBAC 角色绑定           |
 | 28  | roles                    | ro        | RBAC 角色               |
 
-### Action 列表
+### 1.3.3. Action 列表
 
 > 不同的动作(action), 对应不同资源类型,见表格详情
+
+| No  | Name     | ShortName | Describe                             |
+| --- | -------- | --------- | ------------------------------------ |
+| 1   | list     | ls        | 显示列表                             |
+| 2   | describe | desc      | 查看 Pod 详情                        |
+| 3   | yaml     | y         | 查看 YAML                            |
+| 4   | wide     | w         | 查看更新信息                         |
+| 5   | exec     | e         | 查看更新信息                         |
+| 6   | delete   | del       | 查看更新信息                         |
+| 7   | logs     | log       | 查看 Pod 日志                        |
+| 8   | tail     | tail      | 查看 Pod 最近日志，K1S_TAIL 环境设置 |
+| 9   | tailf    | tailf     | 监听日志变化                         |
+| 10  | since    | since     | 查看多少久的日志, K1S_SINCE 环境设置 |
+
+### 1.3.4. 环境变量
+
+| No  | Name      | Default | Describe                    |
+| --- | --------- | ------- | --------------------------- |
+| 1   | K1S_NS    | default | 命名空间名称                |
+| 2   | K1S_PATH  | ~       | 构建目录，默认本用户目录下  |
+| 3   | K1S_TAIL  | 50      | 设置日志显示最近条数，默认最近 50 条    |
+| 4   | K1S_SINCE | 5m      | 最新时间内的日志，默认 5 分钟内 |
+
+## 1.4. 使用
+
+### 1.4.1. 设置环境变量
+
+```sh
+# 设置命名空间名称
+export K1S_NS=default
+
+# 设置构建路径,以斜杆结尾 /
+export K1S_PATH=/home/dev/
+
+# 设置日志显示最近条数
+export K1S_TAIL=100
+
+# 设置日志最新时间内的日志,支持使用 5s, 2m, or 3h
+export K1S_SINCE=30m
+```
