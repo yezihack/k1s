@@ -31,7 +31,7 @@ mv k1s /usr/local/bin
 
 ```sh
 #  环境变量
-k1s resources <param> action
+k1s resources <param> action <extend>
 ```
 
 ### 1.3.1. Resources 列表(扩展功能)
@@ -81,29 +81,63 @@ k1s resources <param> action
 
 > 不同的动作(action), 对应不同资源类型,见表格详情
 
-| No  | Name     | ShortName | Describe                             |
-| --- | -------- | --------- | ------------------------------------ |
-| 1   | list     | ls        | 显示列表                             |
-| 2   | describe | desc      | 查看 Pod 详情                        |
-| 3   | yaml     | y         | 查看 YAML                            |
-| 4   | wide     | w         | 查看更新信息                         |
-| 5   | exec     | e         | 查看更新信息                         |
-| 6   | delete   | del       | 查看更新信息                         |
-| 7   | logs     | log       | 查看 Pod 日志                        |
-| 8   | tail     | tail      | 查看 Pod 最近日志，K1S_TAIL 环境设置 |
-| 9   | tailf    | tailf     | 监听日志变化                         |
-| 10  | since    | since     | 查看多少久的日志, K1S_SINCE 环境设置 |
+| No  | Name     | ShortName | Describe         | ENV                |
+| --- | -------- | --------- | ---------------- | ------------------ |
+| 1   | list     | ls        | 显示列表         |
+| 2   | describe | desc      | 查看详情         |
+| 3   | yaml     | y         | 查看 YAML        |
+| 4   | wide     | w         | 查看更多信息     |
+| 5   | exec     | e         | 进入容器操作     |
+| 6   | delete   | del       | 删除资源操作     |
+| 7   | logs     | log       | 查看日志操作     |
+| 8   | tail     | tail      | 查看 Pod 最近日  | K1S_TAIL 环境设置  |
+| 9   | tailf    | tailf     | 监听日志变化     |
+| 10  | since    | since     | 查看多少久的日志 | K1S_SINCE 环境设置 |
+
+### Extend 扩展功能
+
+| No  | Name           | ShortName | Describe         |
+| --- | -------------- | --------- | ---------------- |
+| 1   | container-name | -         | 选择不同容器名称 |
 
 ### 1.3.4. 环境变量
 
-| No  | Name      | Default | Describe                    |
-| --- | --------- | ------- | --------------------------- |
-| 1   | K1S_NS    | default | 命名空间名称                |
-| 2   | K1S_PATH  | ~       | 构建目录，默认本用户目录下  |
-| 3   | K1S_TAIL  | 50      | 设置日志显示最近条数，默认最近 50 条    |
-| 4   | K1S_SINCE | 5m      | 最新时间内的日志，默认 5 分钟内 |
+| No  | Name      | Default | Describe                             |
+| --- | --------- | ------- | ------------------------------------ |
+| 1   | K1S_NS    | default | 命名空间名称                         |
+| 2   | K1S_PATH  | ~       | 构建目录，默认本用户目录下           |
+| 3   | K1S_TAIL  | 50      | 设置日志显示最近条数，默认最近 50 条 |
+| 4   | K1S_SINCE | 5m      | 最新时间内的日志，默认 5 分钟内      |
 
-## 1.4. 使用
+## 1.4. 使用说明
+
+> 举例说明，只列举常用资源
+
+### 资源查看
+
+- 查看 pods 资源列表
+  
+```sh
+# 简约列表
+k1s po
+# 详细列表
+k1s po w
+```
+
+- 查看 nodes 资源列表
+
+```sh
+# 简约列表
+k1s no
+# 详细列表
+k1s no w
+```
+
+- 查看 deamonsets 资源列表
+
+```sh
+k1s ds
+```
 
 ### 1.4.1. 设置环境变量
 
