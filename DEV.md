@@ -38,9 +38,8 @@ k1s resources <param> action <extend>
 
 | No  | Name    | Describe     |
 | --- | ------- | ------------ |
-| 1   | apply   | 开始部署     |
-| 2   | reapply | 重新部署     |
-| 3   | clean   | 清理无用 Pod |
+| 1   | apply   | 开始部署 or 重新部署     |
+| 2   | clean   | 清理无用 Pod |
 
 ### 1.3.2. Resources 列表(系统对应)
 
@@ -63,12 +62,12 @@ k1s resources <param> action <extend>
 | 13  | secrets                  | sec       | 机密数据配置资源        |
 | 14  | services                 | svc       | 服务负载资源            |
 | 15  | daemonsets               | ds        | 守护进程资源            |
-| 16  | deployments              | deploy    | 控制器资源              |
+| 16  | deployments              | deploy,d    | 控制器资源              |
 | 17  | replicasets              | rs        | 副本集合资源            |
 | 18  | statefulsets             | sts       | 有状态控制器            |
 | 19  | horizontalpodautoscalers | hpa       | Pod 水平自动扩缩器      |
 | 20  | cronjobs                 | bj        | 定时任务器              |
-| 21  | jobs                     | vj        | 一次性任务器            |
+| 21  | jobs                     | job        | 一次性任务器            |
 | 22  | ingresses                | ing       | 对外负载器              |
 | 23  | ingressclasses           | ingc      | Ingress 分类器          |
 | 24  | clusterrolebindings      | crb       | RBAC 集群角色绑定       |
@@ -83,11 +82,10 @@ k1s resources <param> action <extend>
 
 | No  | Name     | ShortName | Describe         | ENV                |
 | --- | -------- | --------- | ---------------- | ------------------ |
-| 1   | list     | ls        | 显示列表         |
+| 1   | list     | ls        | 显示列表(默认显示)        |
 | 2   | describe | desc      | 查看详情         |
 | 3   | yaml     | y         | 查看 YAML        |
-| 4   | wide     | w         | 查看更多信息     |
-| 5   | exec     | e         | 进入容器操作     |
+| 5   | exec     | e,auto         | 进入容器操作     |
 | 6   | delete   | del       | 删除资源操作     |
 | 7   | logs     | log       | 查看日志操作     |
 | 8   | tail     | tail      | 查看 Pod 最近日  | K1S_TAIL 环境设置  |
@@ -98,7 +96,8 @@ k1s resources <param> action <extend>
 
 | No  | Name           | ShortName | Describe         |
 | --- | -------------- | --------- | ---------------- |
-| 1   | container-name | -         | 选择不同容器名称 |
+| 1   | wide     | w         | 查看更多信息     |
+| 2   | container-name | -         | 选择不同容器名称 |
 
 ### 1.3.4. 环境变量
 
