@@ -16,7 +16,7 @@
 
 ## 1.1. 什么是k1s
 
-k1s 主要是用于 kubernetes 管理的命令行工具。
+k1s 主要是用于 kubernetes 管理的命令行工具。对 kubectl 命令实现快捷操作。
 
 ## 1.2. 安装
 
@@ -33,162 +33,128 @@ mv k1s /usr/local/bin
 命令格式：
 
 ```sh
-k1s action <param01> <param02>
+#  环境变量
+k1s resources <param> action <extend>
 ```
 
-### 1.3.1. ☆ 部署
+### 1.3.1. Resources 列表(扩展功能)
 
-- 开始部署  (apply)
-- 重新部署  (reapply)
+| No  | Name  | Describe             |
+| --- | ----- | -------------------- |
+| 1   | apply | 开始部署 or 重新部署 |
+| 2   | clean | 清理无用 Pod         |
 
-### 1.3.2. ☀ 列表
+### 1.3.2. Resources 列表(系统对应)
 
-- 查看 node 列表              ( node|nodes|n|ns)
-- 查看 node 标签              ( label|labels|l|ls)
-- 查看 deploy 列表           (deploy|deploys|dep|deps|d )
-- 查看 pod 列表                (pod|pods|p|po|ps  [监听(w)|yaml(yml|y)])
-- 查看 service 列表           (svc|svcs|s|ss )
-- 查看 endpoints 列表      (ep|eps )
-- 查看 daemonsets 列表   (ds|dss )
-- 查看 statefulSet 列表     (sts)
-- 查看 ingress) 资源列表    (ingress|ing [监听(w)、详情(desc)、yaml(yml|y)])
-- 查看 pv 资源列表            (pv) *
-- 查看 pvc 资源列表          (pvc) *
-- 查看 all                          (all )
+> 资源(Resources) 列表详情, 与 api-resources 显示一致,未全列出,只列出常用的资源名称.
 
-### 1.3.3. ✍ 详情
+| No  | Name                     | ShortName | Describe                |
+| --- | ------------------------ | --------- | ----------------------- |
+| 1   | componentstatuses        | cs        | k8s 组件健康状态        |
+| 2   | configmaps               | cm        | 配置管理资源            |
+| 3   | endpoints                | ep        | 端点                    |
+| 4   | events                   | ev        | 事件                    |
+| 5   | limitranges              | limits    | 为pod自定义资源管理限制 |
+| 6   | namespaces               | ns        | 命名空间                |
+| 7   | nodes                    | no        | 节点资源                |
+| 8   | persistentvolumeclaims   | pvc       | 声明持久卷              |
+| 9   | persistentvolumes        | pv        | 持久卷                  |
+| 10  | pods                     | po        | k8s 管理最小单元        |
+| 11  | replicationcontrollers   | rc        | 副本控制器              |
+| 12  | resourcequotas           | quota     | 硬性资源限额            |
+| 13  | secrets                  | sec       | 机密数据配置资源        |
+| 14  | services                 | svc       | 服务负载资源            |
+| 15  | daemonsets               | ds        | 守护进程资源            |
+| 16  | deployments              | deploy,d  | 控制器资源              |
+| 17  | replicasets              | rs        | 副本集合资源            |
+| 18  | statefulsets             | sts       | 有状态控制器            |
+| 19  | horizontalpodautoscalers | hpa       | Pod 水平自动扩缩器      |
+| 20  | cronjobs                 | bj        | 定时任务器              |
+| 21  | jobs                     | job       | 一次性任务器            |
+| 22  | ingresses                | ing       | 对外负载器              |
+| 23  | ingressclasses           | ingc      | Ingress 分类器          |
+| 24  | clusterrolebindings      | crb       | RBAC 集群角色绑定       |
+| 25  | serviceaccounts          | sa        | RBAC 服务帐号           |
+| 26  | clusterroles             | cr        | RBAC 集群角色           |
+| 27  | rolebindings             | rb        | RBAC 角色绑定           |
+| 28  | roles                    | ro        | RBAC 角色               |
 
-- 查看 node 详情         (desc-node|desc-nodes|dn|dns )
-- 查看 deploy 详情       (desc-deploy|dd|dds )
-- 查看 pod 详情     (desc-pod|dp|dps )
-- 查看 endpoints 详情    (desc-ep|de|des )
-- 查看 daemonsets 详情   (desc-ds|desc-dds )
-- 查看 statefulSet 详情  (desc-sts )
-- 查看 ingress 资源详情 (desc-ing）*
+### 1.3.3. Action 列表
 
-### 1.3.4. ♬ YAML
+> 不同的动作(action), 对应不同资源类型,见表格详情
 
-- 查看 pod YAML          (yaml-pod|yp )
-- 查看 deploy YAML       (yaml-deploy|yd )
-- 查看 service YAML      (yaml-svc|ys )
-- 导出 deploy YAML       (ex-deploy|ed )
-- 导出 service YAML      (ex-svc|es )
+| No  | Name     | ShortName | Describe           | ENV                |
+| --- | -------- | --------- | ------------------ | ------------------ |
+| 1   | list     | ls        | 显示列表(默认显示) |
+| 2   | describe | desc      | 查看详情           |
+| 3   | yaml     | y         | 查看 YAML          |
+| 5   | exec     | e,auto    | 进入容器操作       |
+| 6   | delete   | del       | 删除资源操作       |
+| 7   | logs     | log       | 查看日志操作       |
+| 8   | tail     | tail      | 查看 Pod 最近日志  | K1S_TAIL 环境设置  |
+| 9   | tailf    | tailf     | 监听日志变化       |
+| 10  | since    | since     | 查看多少久的日志   | K1S_SINCE 环境设置 |
 
-### 1.3.5. ☯ Pod
+### Extend 扩展功能
 
-- 进入 pod 容器               (exec )
-- 自动进入 pod 容器      (auto)
-- 查看 pod 日志          (logs|log)
-- 监听 pod 日志         (logsf|logf)
+| No  | Name           | ShortName | Describe         |
+| --- | -------------- | --------- | ---------------- |
+| 1   | wide           | w         | 查看更多信息     |
+| 2   | container-name | -         | 选择不同容器名称 |
 
-### 1.3.6. ✈ 删除
+### 1.3.4. 环境变量
 
-- 删除 pod 资源          (rm-pod|rmp)
-- 删除 deploy 应用       (rm-deploy|rmd)
-- 删除 service 应用           (rm-svc|rms )
-- 删除 statefulSet 应用       （rm-sts|rmss)
-- 删除 daemonSet 应用    (rm-ds|rmds)*
-- 清理垃圾                    (clean|c {空间名称})
+| No  | Name      | Default | Describe                             |
+| --- | --------- | ------- | ------------------------------------ |
+| 1   | K1S_NS    | default | 命名空间名称                         |
+| 2   | K1S_PATH  | ~       | 构建目录，默认本用户目录下           |
+| 3   | K1S_TAIL  | 50      | 设置日志显示最近条数，默认最近 50 条 |
+| 4   | K1S_SINCE | 5m      | 最新时间内的日志，默认 5 分钟内      |
 
-### 1.3.7. ❤ 帮助
+## 1.4. 使用说明
 
-- 查看 top 资源负载 (top) *
-- 查看帮助  (help|h)
+> 举例说明，只列举常用资源
 
-## 1.4. 使用方法
+### 资源查看
 
-K1S脚本直接在计算机上运行。它具有以下命令行界面：
-
+- 查看 pods 资源列表
+  
 ```sh
-k1s [操作类型] [资源名称]
+# 简约列表
+k1s po
+# 详细列表
+k1s po w
+# 查看某pod 
+k1s po xx
 ```
 
-或设置环境变量，获得更多操作方式：
+- 查看 nodes 资源列表
 
 ```sh
-export K1S_NS=[空间名称]
-# 设置路径时使用下划线结束 (/)
-export K1S_PATH=[操作路径] 
-
-k1s [操作类型] [资源名称]
+# 简约列表
+k1s no
+# 详细列表
+k1s no w
 ```
 
-- 操作类型 是必选
-- 资源名称 是可选
-
-### 1.4.1. 使用实例
-
-假设需要部署的应用名称: nginx-test.yaml  
-
-tip: apply, reapply 要求应用名称与文件名同名，方便操作识别。
-
-- 设置环境变量
+- 查看 deamonsets 资源列表
 
 ```sh
-# 设置环境变量,路径必须以斜杆(/)结尾
-export K1S_PATH=/home/sgfoot/
-export K1S_NS=dev
+k1s ds
 ```
 
-- 部署 YAML 应用
+### 1.4.1. 设置环境变量
 
 ```sh
-k1s apply nginx-test
-```
+# 设置命名空间名称
+export K1S_NS=default
 
-- 重新部署 YAML 应用
+# 设置构建路径,以斜杆结尾 /
+export K1S_PATH=/home/dev/
 
-```sh
-k1s apply nginx-test
-```
+# 设置日志显示最近条数
+export K1S_TAIL=100
 
-- 查看 deploy 应用资源列表
-
-```sh
-# 查看所有的
-k1s apply
-
-# 查看单个资源
-k1s apply nginx-test
-```
-
-- 查看 pod 资源列表
-
-```sh
-# 查看所有的
-k1s pod
-
-# 查看单个资源
-k1s pod nginx-test
-```
-
-- 自动进入 POD 容器
-
-```sh
-# 只需要填写 deploy 资源名称，脚本自动查找 pod 的列表，默认选择第一个。
-k1s auto-pod nginx-test
-```
-
-- 导出 deploy YAML 资源
-
-如果设置 K1S_PATH 则保证在指定目录，如果没有设置则保存在当前目录。
-
-```sh
-# 导出当前操作空间下的所有 deploy 资源，每个资源一个YAML文件
-k1s ex-deploy 
-
-# 导出单个资源的 yaml
-k1s ex-deploy nginx-test
-```
-
-- 清理垃圾
-
-目前支持清理 UnexpectedAdmissionError 错误垃圾。
-
-```sh
-# 查看不同空间下统计的错误信息
-k1s clean 
-
-# 清理指定空间下的错误信息
-k1s clean dev
+# 设置日志最新时间内的日志,支持使用 5s, 2m, or 3h
+export K1S_SINCE=30m
 ```
