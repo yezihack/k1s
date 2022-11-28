@@ -25,8 +25,10 @@ param04=$6
 # 命名空间
 nameSpace=${K1S_NS:="default"}
 
-# 存储yaml路径,带 / 结尾
-savePath=${K1S_PATH}
+# 存储yaml路径
+savePath=${K1S_PATH:=~}
+# 判断是否以 / 结尾，自动补全
+[[ ${savePath: -1} != "/" ]] && savePath="${savePath}/"
 
 ###########################
 # 错误列表，用于删除
@@ -52,11 +54,11 @@ action_list=(
 	"auto"
 	"delete"
 	"del"
+	"rm"
 	"log"
 	"logs"
 	"tail"
 	"tailf"
-	"since"
 	"like"
 )
 
@@ -122,8 +124,8 @@ help() {
 	)
 	local tips=(
 		"+++++++++++++++++++++++++++++ 环境变量 ++++++++++++++++++++++++++++"
-		"1. 设置YAML路径的环境变量方式：export K1S_NS=/home/test/ (必须/结尾)"
-		"2. 设置命名空间的环境变量方式：export K1S_PATH=dev"
+		"1. 设置YAML路径的环境变量方式：export K1S_NS=/home/"
+		"2. 设置命名空间的环境变量方式：export K1S_PATH=default"
 	)
 	local envs=(
 		"1. 当前操作的路径：${savePath}"
@@ -238,28 +240,43 @@ check_action() {
 
 # 进入容器内部操作
 autoExecPod() {
-	green "++++++++ 进入 ${param01} pod 容器 ++++++++"
-	param01=$1
+	param01=$1 # pods 名称
+	containerName=$2 # 容器名称
+	cyan "++++++++++++++++ 进入 ${param01} pod 容器 ++++++++++++++++"
 	# 从名称中自动获取 pod 名称
 	podsName=$(kubectl get pods -n "${nameSpace}" | grep "${param01}" | sed -n '1p' | awk '{print $1}')
 	if [ -z "${podsName}" ]; then
 		red "获取 POD 名称失败，请检查或使用 exec-pod 方式。"
 		exit 1
 	fi
-	green "自动获取第一个POD名称: ${podsName}"
-	kubectl exec -it -n "${nameSpace}" "${podsName}" /bin/bash
-	# 如果出错的话，尝试另一种方式
-	local ret=$?
-	if [ ${ret} -ne 0 ]; then
-		green "bash 方式失败，正在尝试 sh 方式进入容器："
-		kubectl exec -it -n "${nameSpace}" "${podsName}" sh
+	# 名称不相等，则提示自动获取的名称。
+	if [ "${podsName}" != "${param01}" ];then
+		green "自动获取第一个POD名称: ${podsName}"
 	fi
+	if [ -n "${containerName}" ];then 
+		green "进入 ContainerName: ${containerName}"
+		kubectl -n "${nameSpace}" exec -it -c "${containerName}" "${podsName}" /bin/bash
+		# 如果出错的话，尝试另一种方式
+		if [ $? -ne 0 ]; then
+			green "bash 方式失败，正在尝试 sh 方式进入容器："
+			kubectl -n "${nameSpace}" exec -it -c "${containerName}" "${podsName}" sh
+		fi
+	else
+		green "进入 ContainerName: 默认第一个容器"
+		kubectl -n "${nameSpace}" exec -it  "${podsName}" /bin/bash
+		# 如果出错的话，尝试另一种方式
+		if [ $? -ne 0 ]; then
+			green "bash 方式失败，正在尝试 sh 方式进入容器："
+			kubectl -n "${nameSpace}" exec -it "${podsName}" sh
+		fi
+	fi	
 }
 
 
 #########################
 check_apply() {
-	# 0. 检查
+	# 0. 检查	
+	echo "lastChar:${lastChar}, savePath:${savePath}"
 	## 检查设置路径
 	if [ -z "${savePath}" ]; then
 		red "请设置的YAML路径的环境变量！"
@@ -302,11 +319,11 @@ apply() {
 	check_apply
 	kubectl get -f "${fullFile}" &>/dev/null
 	if [ $? -eq 1 ]; then
-		green "############ 正在操作新部署 ###############"
-		IsContinue "是否准备好新应用部署：${param01}(Y/N):"
+		cyan "+++++++++++++++++ 新部署 +++++++++++++++++"
+		IsContinue "是否准备好新应用部署：【${param01}】(Y/N):"
 	else
-		yello "############ 正在操作重新部署 ###############"
-		IsContinue "是否准备好重新部署应用：${param01}(Y/N):"
+		cyan "+++++++++++++++++ 重新部署 +++++++++++++++++"
+		IsContinue "是否准备好重新部署应用：【${param01}】(Y/N):"
 	fi
 
 	# 模拟运行是否可行
@@ -324,14 +341,14 @@ apply() {
 	fi
 
 	# 真实运行
-	IsContinue "您正在准备运行部署应用名为:${param01},是否确认(Y/N):"
+	IsContinue "您正在准备运行部署应用名为:【${param01}】,是否确认(Y/N):"
 	kubectl apply -f "${fullFile}"
 
 	# 5. 观察应用状态
 	kubectl get -f "${fullFile}"
 
 	# 6. 查看应用详情
-	IsContinue "是否查看应用:${param01} 的部署详情(Y/N):"
+	IsContinue "是否查看应用:【${param01}】 的部署详情(Y/N):"
 	kubectl describe -f "${fullFile}"
 }
 
@@ -344,7 +361,8 @@ k1s_resource_action() {
 	# 参数01，即具体名称，如 pod 名称,还兼容 wide
 	param_name=$3
 	# 动作名称，默认为 list	
-	action_name=${4:="list"}
+	action_name=$4
+	action_name=${action_name:="list"}
 	# 扩展参数
 	param05=$5
 	# 扩展参数
@@ -362,7 +380,7 @@ k1s_resource_action() {
 	"Xlist") # 获取资源列表
 		if [ -z "${param_name}" ];then
 			kubectl -n ${nameSpace} get "${resouce_name}"
-		elif [ "${param_name}" = "wide" ]; then 
+		elif [ "${param_name}" = "wide" ] || [ "${param_name}" = "w" ]; then 
 			kubectl -n ${nameSpace} get "${resouce_name}" -o wide
 		else 
 			kubectl -n ${nameSpace} get "${resouce_name}" "${param_name}"
@@ -379,7 +397,7 @@ k1s_resource_action() {
 	;;
 	"Xexec"| "Xe" | "Xauto") # 进入容器，只限 pods
 		if [ "${resouce_name}" = "pods" ];then
-			autoExecPod "${param_name}"
+			autoExecPod "${param_name}" "${param05}"
 		else
 			nosupport "${action_name}"
 			exit 0
@@ -538,8 +556,11 @@ main() {
 	# 是否属于某空间下的资源
 	in_ns=0
 	case "X${resource}" in
-	"Xapply")
+	"Xapply" | "Xp")
 		apply
+		;;
+	"Xexec" | "Xauto" | "Xe")
+		autoExecPod "$2" "$3"
 		;;
 	"Xcs" | "Xcomponentstatuses")
 		in_resource="componentstatuses"
@@ -563,7 +584,7 @@ main() {
 	"Xnamespaces" | "Xns")
 		in_resource="namespaces"
 		;;	
-	"Xnodes" | "Xno")
+	"Xnodes" | "Xnode" | "Xno")
 		in_resource="nodes"
 		;;
 	"Xpersistentvolumeclaims" | "Xpvc")
