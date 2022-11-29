@@ -115,15 +115,66 @@ in_array () {
 help() {
 	scriptName=$0
 	scriptName=$(basename "${scriptName}")
-	local tools=(
-		"----------------- ↓ ☆ 部署 ↓ ------------------"
+	local tools=(		
+		"--------------- ↓ ⚙ 操作公式 ↓ ---------------"		
+		"${scriptName} [resources] [资源名称] [action] [extend]"
+		"--------------- ↓ ☆ 特殊资源 ↓ ---------------"
 		"部署:              ${scriptName} apply {资源名称}"
-		"--------------- ↓ ☯ 常用资源  ↓ ----------------"		
-		"----------------- ↓ ❤ 帮助 ↓ -------------------"
+		"进入容器:          ${scriptName} exec/auto,e {资源名称}"
+		"清理:              ${scriptName} clean {资源名称}"
+		"---------- ↓ ☯ 资源列表(resources)  ↓ ----------"		
+		"组件健康: 		componentstatuses / cs"
+		"配置管理资源: 	configmaps / cm"
+		"端点:		endpoints / ep"
+		"事件: 		events / ev"
+		"资源管理限制: 	limitranges / limits"
+		"命名空间: 		namespaces / ns"
+		"节点资源: 		nodes / node / no"
+		"声明持久卷: 	persistentvolumeclaims / pvc "
+		"持久卷: 		persistentvolumes / pv "
+		"Pod 资源: 		pods / po / ps "
+		"副本控制器: 	replicationcontrollers / rc "
+		"硬性资源限额: 	resourcequotas / quota "
+		"密钥存储: 		secrets / secret / sec "
+		"Service 资源: 	nodes / node "
+		"守护进程资源: 	daemonsets / ds "
+		"无状态控制器: 	deployments / deploy / d "
+		"副本集合资源: 	replicasets / rs "
+		"有状态控制器: 	statefulsets / sts "
+		"水平自动扩缩器: 	horizontalpodautoscalers / hpa "
+		"定时任务器: 	cronjobs / bj "
+		"一次性任务器: 	jobs / job "
+		"Ingresses资源: 	ingresses / ing "
+		"Ingress 分类器: 	ingressclasses / ingc "
+		"RBAC 集群角色绑定:	clusterrolebindings / crb "
+		"RBAC 服务帐号: 	serviceaccounts / sa "
+		"RBAC 集群角色: 	clusterroles / cr "
+		"RBAC 角色绑定: 	rolebindings / rb "
+		"RBAC 角色: 	roles / ro "
+		"--------------- ↓ 🛠 动作(Action) ↓ ---------------"
+		"显示列表: 		list / ls"
+		"查看详情: 		describe / desc"
+		"查看 YAML: 	yaml / yml / y"
+		"查看更多信息: 	wide / w"
+		"进入容器操作: 	exec / auto / e"
+		"删除资源操作: 	delete / del / rm"
+		"日志操作: 		logs / log"
+		"最近日志: 		tail"
+		"监听日志: 		tailf"
+		"模糊查找: 		like"		
+		"--------------- ↓ ☀ 实例(Example) ↓ ---------------"
+		"查看 pod 列表: 	${scriptName} po"
+		"查看 pod 详情: 	${scriptName} po kube-cc-7789c5f6d6-szqwk desc"
+		"查看 pod 日志: 	${scriptName} po kube-cc-7789c5f6d6-szqwk log"
+		"查看 pod 日志(c): 	${scriptName} po kube-cc-7789c5f6d6-szqwk log client (client 表示容器名称)"
+		"查看 pod 最近日志: ${scriptName} po kube-cc-7789c5f6d6-szqwk log 10"		
+		"监听 pod 日志: 	${scriptName} po kube-cc-7789c5f6d6-szqwk tailf"
+		"进入 pod 容器: 	${scriptName} po kube-cc-7789c5f6d6-szqwk exec"
+		"进入 pod 容器(c): 	${scriptName} po kube-cc-7789c5f6d6-szqwk exec client (client 表示容器名称)"
+		"--------------- ↓ ❤ 帮助(Help) ↓ ---------------"
 		"查看帮助：         ${scriptName} help|h"
 	)
-	local tips=(
-		"+++++++++++++++++++++++++++++ 环境变量 ++++++++++++++++++++++++++++"
+	local set_env=(
 		"1. 设置YAML路径的环境变量方式：export K1S_NS=/home/"
 		"2. 设置命名空间的环境变量方式：export K1S_PATH=default"
 	)
@@ -132,13 +183,12 @@ help() {
 		"2. 当前操作的空间名：${nameSpace}"
 	)
 	cat <<EOF
-   ⎈ __    ____ ⎈       
-|  | _/_   | ______
-|  |/ /|   |/  ___/
-|    < |   |\___ \ 
-|__|_ \|___/____  >
-     \/         \/  by 百里(github.com/yezihack/k1s)
-    version: ${version}
+   _   _   _  
+  / \ / \ / \ 
+ ( k | 1 | s )
+  \_/ \_/ \_/ 
+  	by 百里(github.com/yezihack/k1s)
+ version: ${version}
 EOF
 	local i=0
 	for name in "${tools[@]}"; do
@@ -156,9 +206,9 @@ EOF
 			cyan "${inc}. ${name}"
 		fi
 
-	done
-	echo "TIP:"
-	for name in "${tips[@]}"; do
+	done	
+	echo "SET ENVIRONMENT:"
+	for name in "${set_env[@]}"; do
 		green "${name}"
 	done
 	echo "CURRENT:"
@@ -172,7 +222,7 @@ tip() {
 		"1. 当前操作的路径：${savePath}"
 		"2. 当前操作的空间名：${nameSpace}"
 	)
-	for name in "${tips[@]}"; do
+	for name in "${set_env[@]}"; do
 		green "${name}"
 	done
 }
@@ -368,8 +418,7 @@ k1s_resource_action() {
 	# 扩展参数
 	param06=$6
 	# 扩展参数
-	param07=$7
-	echo "资源名称:${resouce_name}, is_ns: ${is_ns}, 参数01:${param_name}, 动作名称:${action_name}"
+	param07=$7	
 	# 输出基础信息
 	yello "######## namespace:${nameSpace} # resouce-name:${resouce_name} # action:${action_name} ########"
 	# 检查 Action 是否有效
