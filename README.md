@@ -12,9 +12,9 @@
  version: 2.0.0
 ```
 
-<!-- [![asciicast](https://asciinema.org/a/541172.svg)](https://asciinema.org/a/541172) -->
+[![asciicast](https://asciinema.org/a/541172.svg)](https://asciinema.org/a/541172)
 
-![README-asciinema-20221129205852](https://cdn.jsdelivr.net/gh/yezihack/assets/b/README-asciinema-20221129205852)
+<!-- ![README-asciinema-20221129205852](https://cdn.jsdelivr.net/gh/yezihack/assets/b/README-asciinema-20221129205852) -->
 
 更多效果：<https://asciinema.org/a/541172>
 
