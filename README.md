@@ -370,3 +370,13 @@ k1s svc kube-dns yaml
 # 详情模式 -> 查看资源的 describe 详细
 k1s svc kube-dns desc
 ```
+
+#### 1.5.4.6. 清理垃圾
+
+```sh
+# 查看不同空间下统计的错误信息
+k1s clean 
+
+# 清理指定空间下的错误信息
+k1s clean dev
+```
