@@ -326,7 +326,6 @@ autoExecPod() {
 #########################
 check_apply() {
 	# 0. 检查	
-	echo "lastChar:${lastChar}, savePath:${savePath}"
 	## 检查设置路径
 	if [ -z "${savePath}" ]; then
 		red "请设置的YAML路径的环境变量！"
