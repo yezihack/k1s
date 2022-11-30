@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-############################
-# k8s 工具集
-############################
-version=2.0.0
+##################################
+# 名称：kubernetes kubectl 扩展功能
+# 作者：百里
+# github: github.com/yezihack/k1s
+# 创建时间：2022/11/24
+#################################
+version=2.0.1
 ############参数###########
 # 资源名称
 resource=$1
@@ -372,7 +375,8 @@ apply() {
 		IsContinue "是否准备好新应用部署：【${param01}】(Y/N):"
 	else
 		cyan "+++++++++++++++++ 重新部署 +++++++++++++++++"
-		IsContinue "是否准备好重新部署应用：【${param01}】(Y/N):"
+		kubectl diff -f "${fullFile}"
+		IsContinue "观察当前 YAML 的差异, 是否准备好重新部署应用：【${param01}】(Y/N):"
 	fi
 
 	# 模拟运行是否可行
@@ -405,31 +409,31 @@ apply() {
 k1s_resource_action() {
 	# 资源名称
 	resouce_name=$1
-	# 是否属于某空间下的资源
-	is_ns=$2
 	# 参数01，即具体名称，如 pod 名称,还兼容 wide
-	param_name=$3
+	param_name=$2
 	# 动作名称，默认为 list	
-	action_name=$4
+	action_name=$3
 	action_name=${action_name:="list"}
 	# 扩展参数
-	param05=$5
+	param05=$4
 	# 扩展参数
-	param06=$6
+	param06=$5
 	# 扩展参数
-	param07=$7	
+	param07=$6	
 	# 输出基础信息
-	yello "######## namespace:${nameSpace} # resouce-name:${resouce_name} # action:${action_name} ########"
+	yello "######## namespace:${nameSpace} # resouce-name:${resouce_name} # action:${action_name} # param_name:${param_name} ########"
 	# 检查 Action 是否有效
 	check_action "${action_name}"
 
 	# 分支判断
 	case "X${action_name}" in
-	"Xlist") # 获取资源列表
+	"Xlist" | "Xwide" | "Xw") # 获取资源列表
 		if [ -z "${param_name}" ];then
 			kubectl -n ${nameSpace} get "${resouce_name}"
 		elif [ "${param_name}" = "wide" ] || [ "${param_name}" = "w" ]; then 
 			kubectl -n ${nameSpace} get "${resouce_name}" -o wide
+		elif [ "${action_name}" = "wide" ] || [ "${action_name}" = "w" ]; then
+			kubectl -n ${nameSpace} get "${resouce_name}" "${param_name}" -o wide
 		else 
 			kubectl -n ${nameSpace} get "${resouce_name}" "${param_name}"
 		fi
@@ -601,8 +605,6 @@ clean() {
 main() {	
 	## 资源名称
 	in_resource=""
-	# 是否属于某空间下的资源
-	in_ns=0
 	case "X${resource}" in
 	"Xapply" | "Xp")
 		apply
@@ -615,19 +617,15 @@ main() {
 		;;
 	"Xconfigmaps" | "Xcm")
 		in_resource="configmaps"
-		in_ns=1
 		;;
 	"Xendpoints" | "Xep")
 		in_resource="endpoints"
-		in_ns=1
 		;;
 	"Xevents" | "Xev")
 		in_resource="events"
-		in_ns=1
 		;;
 	"Xlimitranges" | "Xlimits" | "Xlimit")
 		in_resource="limitranges"
-		in_ns=1
 		;;
 	"Xnamespaces" | "Xns")
 		in_resource="namespaces"
@@ -637,58 +635,45 @@ main() {
 		;;
 	"Xpersistentvolumeclaims" | "Xpvc")
 		in_resource="persistentvolumeclaims"
-		in_ns=1
 		;;
 	"Xpersistentvolumes" | "Xpv")
 		in_resource="persistentvolumes"
 		;;
 	"Xpods" | "Xpo" | "Xps")
 		in_resource="pods"
-		in_ns=1
 		;;
 	"Xreplicationcontrollers" | "Xrc")
-		in_resource="replicationcontrollers"
-		in_ns=1
+		in_resource="replicationcontrollers"		
 		;;
 	"Xsecrets" | "Xsecret" | "Xsec")
-		in_resource="secrets"
-		in_ns=1
+		in_resource="secrets"		
 		;;
 	"Xservices" | "Xsvc")
-		in_resource="services"
-		in_ns=1
+		in_resource="services"		
 		;;
 	"Xdaemonsets" | "Xds")
-		in_resource="daemonsets"
-		in_ns=1
+		in_resource="daemonsets"		
 		;;
 	"Xdeployments" | "Xdeploy" | "Xd")
-		in_resource="deployments"
-		in_ns=1
+		in_resource="deployments"		
 		;;
 	"Xreplicasets" | "Xrs")
-		in_resource="replicasets"
-		in_ns=1
+		in_resource="replicasets"		
 		;;
 	"Xstatefulsets" | "Xsts")
-		in_resource="statefulsets"
-		in_ns=1
+		in_resource="statefulsets"		
 		;;
 	"Xhorizontalpodautoscalers" | "Xhpa")
-		in_resource="horizontalpodautoscalers"
-		in_ns=1
+		in_resource="horizontalpodautoscalers"		
 		;;
 	"Xcronjobs" | "Xcj")
-		in_resource="cronjobs"
-		in_ns=1
+		in_resource="cronjobs"		
 		;;
 	"Xjobs" | "Xjob")
-		in_resource="jobs"
-		in_ns=1
+		in_resource="jobs"		
 		;;
 	"Xingresses" | "Xing")
-		in_resource="ingresses"
-		in_ns=1
+		in_resource="ingresses"		
 		;;
 	"Xingressclasses" | "Xingc")
 		in_resource="ingressclasses"
@@ -697,8 +682,7 @@ main() {
 		in_resource="clusterrolebindings"
 		;;
 	"Xserviceaccounts" | "Xsa")
-		in_resource="serviceaccounts"
-		in_ns=1
+		in_resource="serviceaccounts"		
 		;;
 	"Xclusterroles" | "Xcr")
 		in_resource="clusterroles"
@@ -707,8 +691,7 @@ main() {
 		in_resource="rolebindings"
 		;;
 	"Xroles" | "Xro")
-		in_resource="roles"
-		in_ns=1
+		in_resource="roles"		
 		;;
 	"Xclean" | "Xc")
 		clean
@@ -720,8 +703,7 @@ main() {
 	# 拼接成完整的命令
 	if [ "${in_resource}" != "" ]; then 
 		# 资源名称 是否是某空间下的资源 参数01 动作名称 		
-		k1s_resource_action "${in_resource}" ${in_ns} ${param01} ${action} ${param02} ${param03} ${param04}
+		k1s_resource_action "${in_resource}" ${param01} ${action} ${param02} ${param03} ${param04}
 	fi	
 }
-
 main "$@"

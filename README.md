@@ -14,7 +14,7 @@
 
 [![asciicast](https://asciinema.org/a/541172.svg)](https://asciinema.org/a/541172)
 
-<!-- ![README-asciinema-20221129205852](https://cdn.jsdelivr.net/gh/yezihack/assets/b/README-asciinema-20221129205852) -->
+<!-- ![README-k1s](https://cdn.jsdelivr.net/gh/yezihack/assets/b/README-k1s.gif) -->
 
 <!-- 更多效果：<https://asciinema.org/a/541172> -->
 
