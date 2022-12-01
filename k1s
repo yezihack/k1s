@@ -122,7 +122,7 @@ help() {
 		"--------------- ↓ ⚙ 操作公式 ↓ ---------------"		
 		"${scriptName} [resources] [资源名称] [action] [extend]"
 		"--------------- ↓ ☆ 特殊资源 ↓ ---------------"
-		"部署:              ${scriptName} apply {资源名称}"
+		"部署/重装:         ${scriptName} apply {资源名称}"
 		"进入容器:          ${scriptName} exec/auto,e {资源名称}"
 		"清理:              ${scriptName} clean {资源名称}"
 		"---------- ↓ ☯ 资源列表(resources)  ↓ ----------"		
