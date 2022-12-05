@@ -174,6 +174,7 @@ help() {
 		"监听 pod 日志: 	${scriptName} po kube-cc-7789c5f6d6-szqwk tailf"
 		"进入 pod 容器: 	${scriptName} po kube-cc-7789c5f6d6-szqwk exec"
 		"进入 pod 容器(c): 	${scriptName} po kube-cc-7789c5f6d6-szqwk exec client (client 表示容器名称)"
+		"编辑 YAML: 		${scriptName} po kube-cc-7789c5f6d6-szqwk edit"
 		"--------------- ↓ ❤ 帮助(Help) ↓ ---------------"
 		"查看帮助：         ${scriptName} help|h"
 	)
@@ -556,6 +557,10 @@ k1s_resource_action() {
 			kubectl -n ${nameSpace} logs -f --tail=15 "${param_name}"
 			[[ $? -ne 0 ]] && exit 0
 		fi
+	;;	
+	"Xedit") # 编辑 YAML	
+		cyan "+++++++++++++++++ 编辑 ${param_name} YAML +++++++++++++++++"
+		kubectl -n ${nameSpace} edit "${resouce_name}" "${param_name}"
 	;;	
 	esac
 }

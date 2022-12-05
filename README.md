@@ -107,6 +107,7 @@ k1s resources <param> action <extend>
 | 08  | tail     |           | 查看 Pod 最近日志  |
 | 09  | tailf    |           | 监听日志变化       |
 | 10  | like     |           | 模糊查找           |
+| 11  | edit     |           | 编辑 YAML           |
 
 ### 1.4.4. Extend 扩展功能
 

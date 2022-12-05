@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.1.0
+
+- 添加编辑 YAML 功能
+- 使用方式: `k1s po xx edit`
+
 ## 2.0.2
 
 - 修改说明：apply 兼容 部署与重装
