@@ -192,6 +192,7 @@ help() {
  ( k | 1 | s )
   \_/ \_/ \_/ 
   	by 百里(github.com/yezihack/k1s)
+   so easy, so fast.
  version: ${version}
 EOF
 	local i=0
@@ -697,6 +698,9 @@ main() {
 		;;
 	"Xroles" | "Xro")
 		in_resource="roles"		
+		;;
+	"Xall")
+		kubectl -n "${nameSpace}" get all
 		;;
 	"Xclean" | "Xc")
 		clean

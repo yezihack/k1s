@@ -1,7 +1,34 @@
 [![k1s](https://img.shields.io/badge/kubernetes-k1s-green?style=flat-square&logo=appveyor)](https://github.com/yezihack/k1s)
 [![GitHub license](https://img.shields.io/github/license/yezihack/k1s?style=flat-square&logo=appveyor)](https://github.com/yezihack/k1s/blob/master/LICENSE)
 
-# 1. k1s: kubectl 辅助工具
+<!-- TOC -->
+
+- [1. k1s 是 kubectl 辅助工具](#1-k1s-是-kubectl-辅助工具)
+  - [1.1. 什么是 k1s](#11-什么是-k1s)
+  - [1.2. k1s 特色](#12-k1s-特色)
+  - [1.3. 安装](#13-安装)
+  - [1.4. 快速上手](#14-快速上手)
+  - [1.5. 功能](#15-功能)
+    - [1.5.1. Resources 列表( kubectl 系统对应)](#151-resources-列表-kubectl-系统对应)
+    - [1.5.2. Resources 列表(扩展功能)](#152-resources-列表扩展功能)
+    - [1.5.3. Action 列表](#153-action-列表)
+    - [1.5.4. Extend 扩展功能](#154-extend-扩展功能)
+    - [1.5.5. 环境变量](#155-环境变量)
+  - [1.6. 使用说明](#16-使用说明)
+    - [1.6.1. 设置环境变量](#161-设置环境变量)
+    - [1.6.2. 日志查看](#162-日志查看)
+    - [1.6.3. 进入容器](#163-进入容器)
+    - [1.6.4. 资源操作](#164-资源操作)
+      - [1.6.4.1. nodes 资源](#1641-nodes-资源)
+      - [1.6.4.2. pods 资源](#1642-pods-资源)
+      - [1.6.4.3. deployments 资源](#1643-deployments-资源)
+      - [1.6.4.4. daemonsets 资源](#1644-daemonsets-资源)
+      - [1.6.4.5. services 资源](#1645-services-资源)
+      - [1.6.4.6. 清理垃圾](#1646-清理垃圾)
+
+<!-- /TOC -->
+
+# 1. k1s 是 kubectl 辅助工具
 
 ```text
    _   _   _
@@ -39,7 +66,40 @@ chmod +x k1s
 sudo mv k1s /usr/local/bin
 ```
 
-## 1.4. 功能
+## 1.4. 快速上手
+
+设置命名空间
+
+```sh
+export K1S_NS=kube-system
+```
+
+基本操作命令
+
+```sh
+# 查看帮助
+k1s
+
+# 查看 pods 列表
+k1s po
+
+# 查看 pods describe 
+k1s po xxx desc
+
+# 查看 pods YAML 
+k1s po xxx yaml
+
+# 查看 pods 日志(xxx 表示 pods 名称)
+k1s po xxx logs
+
+# 查看 pods 最近10条日志(xxx 表示 pods 名称)
+k1s po xxx logs 10
+
+# 进入容器内部 
+k1s po xxx exec
+```
+
+## 1.5. 功能
 
 命令格式：
 
@@ -48,7 +108,7 @@ sudo mv k1s /usr/local/bin
 k1s resources <param> action <extend>
 ```
 
-### 1.4.1. Resources 列表( kubectl 系统对应)
+### 1.5.1. Resources 列表( kubectl 系统对应)
 
 > 资源(Resources) 列表详情, 与 api-resources 显示一致,未全列出,只列出常用的资源名称.
 
@@ -83,7 +143,7 @@ k1s resources <param> action <extend>
 | 27  | rolebindings             | rb        | RBAC 角色绑定           |
 | 28  | roles                    | ro        | RBAC 角色               |
 
-### 1.4.2. Resources 列表(扩展功能)
+### 1.5.2. Resources 列表(扩展功能)
 
 | No  | Name   | ShortName | Describe          |
 | --- | ----- | ----- | ----------------- |
@@ -91,7 +151,7 @@ k1s resources <param> action <extend>
 | 2   | exec  | auto, e | 进入容器 |
 | 3   | clean | c | 清理无用 Pod      |
 
-### 1.4.3. Action 列表
+### 1.5.3. Action 列表
 
 > 操作某资源时可以使用不同的动作(action)从而实现多功能操作。
 
@@ -109,7 +169,7 @@ k1s resources <param> action <extend>
 | 10  | like     |           | 模糊查找           |
 | 11  | edit     |           | 编辑 YAML           |
 
-### 1.4.4. Extend 扩展功能
+### 1.5.4. Extend 扩展功能
 
 > 动态的参数，如操作 logs 日志。见下面实例。
 
@@ -118,18 +178,18 @@ k1s resources <param> action <extend>
 | 1   | container-name | 选择不同容器名称 |
 | 2   | 10               | 显示日志最近条数 |
 
-### 1.4.5. 环境变量
+### 1.5.5. 环境变量
 
 | No  | Name     | Default | Describe                   |
 | --- | -------- | ------- | -------------------------- |
 | 1   | K1S_NS   | default | 命名空间名称               |
 | 2   | K1S_PATH | ~       | 构建目录，默认本用户目录下 |
 
-## 1.5. 使用说明
+## 1.6. 使用说明
 
 > 举例说明，只列举常用资源
 
-### 1.5.1. 设置环境变量
+### 1.6.1. 设置环境变量
 
 ```sh
 # 设置命名空间名称
@@ -139,7 +199,17 @@ export K1S_NS=default
 export K1S_PATH=/home/dev/
 ```
 
-### 1.5.2. 日志查看
+小技巧：对于常操作的命令空间，可以设置别名
+
+```sh
+vim ~/.bashrc
+# 或
+vim ~/.zshrc
+
+alias k1s-sys='export K1S_NS=kube-system && export K1S_PATH=/opt/deploy/'
+```
+
+### 1.6.2. 日志查看
 
 > 别名：logs, log
 
@@ -172,7 +242,7 @@ k1s po kube-cc-7789c5f6d6-szqwk logs client 10
 
 - 查看多容器 pod 的日志，有选择性查看容器日志。
 
-### 1.5.3. 进入容器
+### 1.6.3. 进入容器
 
 > 别名：exec, auto, e
 
@@ -201,7 +271,7 @@ k1s po kube-cc-7789c5f6d6-szqwk exec
 k1s po kube-cc-7789c5f6d6-szqwk exec client
 ```
 
-### 1.5.4. 资源操作
+### 1.6.4. 资源操作
 
 只列举常用的几种资源，其它资源查找大同小异。
 
@@ -222,7 +292,7 @@ k1s po kube-cc-7789c5f6d6-szqwk exec client
 - delete 删除资源
 - log 日志
 
-#### 1.5.4.1. nodes 资源
+#### 1.6.4.1. nodes 资源
 
 > 别名：nodes, node, no
 
@@ -252,7 +322,7 @@ k1s no kube-10 yaml
 k1s no kube-10 desc
 ```
 
-#### 1.5.4.2. pods 资源
+#### 1.6.4.2. pods 资源
 
 > 别名：pods, po, ps
 
@@ -286,7 +356,7 @@ k1s po kube-box-685fb75bb-cvmgz desc
 k1s po kube-box-685fb75bb-cvmgz delete
 ```
 
-#### 1.5.4.3. deployments 资源
+#### 1.6.4.3. deployments 资源
 
 > 别名：deployments, deploy, d
 
@@ -316,7 +386,7 @@ k1s d kube-box yaml
 k1s d kube-box desc
 ```
 
-#### 1.5.4.4. daemonsets 资源
+#### 1.6.4.4. daemonsets 资源
 
 > 别名：daemonsets, ds
 
@@ -346,7 +416,7 @@ k1s ds kube-proxy yaml
 k1s ds kube-proxy desc
 ```
 
-#### 1.5.4.5. services 资源
+#### 1.6.4.5. services 资源
 
 > 别名：services, svc
 
@@ -376,7 +446,7 @@ k1s svc kube-dns yaml
 k1s svc kube-dns desc
 ```
 
-#### 1.5.4.6. 清理垃圾
+#### 1.6.4.6. 清理垃圾
 
 ```sh
 # 查看不同空间下统计的错误信息
