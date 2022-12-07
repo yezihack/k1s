@@ -97,6 +97,9 @@ k1s po xxx logs 10
 
 # 进入容器内部 
 k1s po xxx exec
+
+# 查看所有服务
+k1s all
 ```
 
 ## 1.5. 功能
@@ -150,6 +153,7 @@ k1s resources <param> action <extend>
 | 1   | apply | p | 开始部署/重新部署 |
 | 2   | exec  | auto, e | 进入容器 |
 | 3   | clean | c | 清理无用 Pod      |
+| 3   | all | all | 查看所有服务    |
 
 ### 1.5.3. Action 列表
 
