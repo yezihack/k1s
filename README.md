@@ -63,7 +63,7 @@ k1s 主要是用于 kubernetes 管理的命令行工具。对 kubectl 命令实�
 ```sh
 wget https://raw.githubusercontent.com/yezihack/k1s/master/k1s
 chmod +x k1s
-sudo mv k1s /usr/local/bin
+sudo mv k1s /usr/sbin
 ```
 
 ## 1.4. 快速上手
