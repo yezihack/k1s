@@ -273,6 +273,7 @@ IsYesNo() {
 IsGtK8sVersion118() {
 	version=$(kubectl version | sed -r "s/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/g" | sed -n '1p')
 	versionNumber=$(echo "${version}" | sed -r "s/[v\.]//g")
+	versionNumber=${versionNumber:0:4}
 	if [ "${versionNumber}" -ge 1180 ]; then
 		return 1
 	fi
@@ -383,11 +384,12 @@ apply() {
 
 	# 模拟运行是否可行
 	IsGtK8sVersion118
-	if [ $? -eq 1 ]; then
+	ret=$?
+	if [ $ret -eq 1 ]; then
 		kubectl apply -f "${fullFile}" --dry-run=client
-		alert "client 端，模拟运行"
+		alert "client 端:模拟运行"
 		kubectl apply -f "${fullFile}" --dry-run=server
-		alert "server 端，模拟运行"
+		alert "server 端:模拟运行"
 	else
 		kubectl apply -f "${fullFile}" --dry-run
 		alert "client 端，模拟运行"
