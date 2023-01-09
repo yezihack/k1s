@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.1.3
+
+- 修复 k1s help 提示
+
 ## 2.1.2
 
 - 修复 apply 判断版本异常 BUG
