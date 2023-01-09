@@ -5,7 +5,7 @@
 # github: github.com/yezihack/k1s
 # 创建时间：2022/11/24
 #################################
-version=2.0.1
+version=2.1.2
 ############参数###########
 # 资源名称
 resource=$1
@@ -165,6 +165,7 @@ help() {
 		"最近日志: 		tail"
 		"监听日志: 		tailf"
 		"模糊查找: 		like"		
+		"编辑 YAML: 	edit"		
 		"--------------- ↓ ☀ 实例(Example) ↓ ---------------"
 		"查看 pod 列表: 	${scriptName} po"
 		"查看 pod 详情: 	${scriptName} po kube-cc-7789c5f6d6-szqwk desc"
@@ -174,7 +175,7 @@ help() {
 		"监听 pod 日志: 	${scriptName} po kube-cc-7789c5f6d6-szqwk tailf"
 		"进入 pod 容器: 	${scriptName} po kube-cc-7789c5f6d6-szqwk exec"
 		"进入 pod 容器(c): 	${scriptName} po kube-cc-7789c5f6d6-szqwk exec client (client 表示容器名称)"
-		"编辑 YAML: 		${scriptName} po kube-cc-7789c5f6d6-szqwk edit"
+		"编辑 YAML:			${scriptName} po kube-cc-7789c5f6d6-szqwk edit"
 		"--------------- ↓ ❤ 帮助(Help) ↓ ---------------"
 		"查看帮助：         ${scriptName} help|h"
 	)
