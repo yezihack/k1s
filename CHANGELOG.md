@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.1.4
+
+- rm 实现：--force --grace-period=0 ok
+- 查看上一次的日志：p, 显示出来。
+- K1S_PATH 使用当前操作的目录
+- 删除 Evicted 的 pod
+
 ## 2.1.3
 
 - 修复 k1s help 提示

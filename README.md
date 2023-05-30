@@ -92,11 +92,26 @@ k1s po xxx yaml
 # 查看 pods 日志(xxx 表示 pods 名称)
 k1s po xxx logs
 
+# 查看先前 pods 日志(xxx 表示 pods 名称)
+k1s po xxx logs p
+
 # 查看 pods 最近10条日志(xxx 表示 pods 名称)
 k1s po xxx logs 10
 
+# 查看 pods 里 client 容器
+k1s po xxx logs client
+
+# 查看先前 pods 里 client 容器
+k1s po xxx logs p client
+
 # 进入容器内部 
 k1s po xxx exec
+
+# 删除 pod 
+k1s po xxx del
+
+# 强制删除 pod 
+k1s po xxx rm
 
 # 查看所有服务
 k1s all
@@ -166,7 +181,7 @@ k1s resources <param> action <extend>
 | 03  | yaml     | y,yml     | 查看 YAML          |
 | 04  | wide     | w         | 查看更多信息       |
 | 05  | exec     | e,auto    | 进入容器操作       |
-| 06  | delete   | del,rm      | 删除资源操作       |
+| 06  | delete   | del,rm      | 删除资源操作(rm 为强制删除)      |
 | 07  | logs     | log       | 查看日志操作,也兼容 tail       |
 | 08  | tail     |           | 查看 Pod 最近日志  |
 | 09  | tailf    |           | 监听日志变化       |
@@ -200,6 +215,7 @@ k1s resources <param> action <extend>
 export K1S_NS=default
 
 # 设置构建路径，主要用于 apply 部署或重建时用到。
+## 如果不设置路径则动态选择当前目录
 export K1S_PATH=/home/dev/
 ```
 

@@ -5,7 +5,7 @@
 # github: github.com/yezihack/k1s
 # 创建时间：2022/11/24
 #################################
-version=2.1.2
+version=2.1.4
 ############参数###########
 # 资源名称
 resource=$1
@@ -29,7 +29,7 @@ param04=$6
 nameSpace=${K1S_NS:="default"}
 
 # 存储yaml路径
-savePath=${K1S_PATH:=~}
+savePath=${K1S_PATH:=$PWD}
 # 判断是否以 / 结尾，自动补全
 [[ ${savePath: -1} != "/" ]] && savePath="${savePath}/"
 
@@ -39,6 +39,7 @@ err_list=(
 	"UnexpectedAdmissionError"
 	"Terminating"
 	"OutOfcpu"
+	"Evicted"
 )
 
 # action 列表
@@ -167,15 +168,19 @@ help() {
 		"模糊查找: 		like"		
 		"编辑 YAML: 	edit"		
 		"--------------- ↓ ☀ 实例(Example) ↓ ---------------"
-		"查看 pod 列表: 	${scriptName} po"
-		"查看 pod 详情: 	${scriptName} po kube-cc-7789c5f6d6-szqwk desc"
-		"查看 pod 日志: 	${scriptName} po kube-cc-7789c5f6d6-szqwk log"
-		"查看 pod 日志(c): 	${scriptName} po kube-cc-7789c5f6d6-szqwk log client (client 表示容器名称)"
-		"查看 pod 最近日志: ${scriptName} po kube-cc-7789c5f6d6-szqwk log 10"		
-		"监听 pod 日志: 	${scriptName} po kube-cc-7789c5f6d6-szqwk tailf"
-		"进入 pod 容器: 	${scriptName} po kube-cc-7789c5f6d6-szqwk exec"
-		"进入 pod 容器(c): 	${scriptName} po kube-cc-7789c5f6d6-szqwk exec client (client 表示容器名称)"
-		"编辑 YAML:			${scriptName} po kube-cc-7789c5f6d6-szqwk edit"
+		"查看 pod 列表: 			${scriptName} po"
+		"查看 pod 详情: 			${scriptName} po kube-cc-7789c5f6d6-szqwk desc"
+		"查看 pod 日志: 			${scriptName} po kube-cc-7789c5f6d6-szqwk log"
+		"查看 pod 日志(先前日志): 		${scriptName} po kube-cc-7789c5f6d6-szqwk log p"
+		"查看 pod 日志(c): 			${scriptName} po kube-cc-7789c5f6d6-szqwk log client (client 表示容器名称)"
+		"查看 pod 日志(c,先前日志):		${scriptName} po kube-cc-7789c5f6d6-szqwk log p client (client 表示容器名称)"
+		"查看 pod 最近日志: 		${scriptName} po kube-cc-7789c5f6d6-szqwk log 10"		
+		"监听 pod 日志: 			${scriptName} po kube-cc-7789c5f6d6-szqwk tailf"
+		"进入 pod 容器: 			${scriptName} po kube-cc-7789c5f6d6-szqwk exec"
+		"进入 pod 容器(c): 			${scriptName} po kube-cc-7789c5f6d6-szqwk exec client (client 表示容器名称)"
+		"编辑 YAML:				${scriptName} po kube-cc-7789c5f6d6-szqwk edit"
+		"删除 pod:				${scriptName} po kube-cc-7789c5f6d6-szqwk del"
+		"强制删除 pod:			${scriptName} po kube-cc-7789c5f6d6-szqwk rm"
 		"--------------- ↓ ❤ 帮助(Help) ↓ ---------------"
 		"查看帮助：         ${scriptName} help|h"
 	)
@@ -474,6 +479,20 @@ k1s_resource_action() {
 			red "资源【${param_name}】 删除失败"
 		fi
 	;;
+	"Xrm") # 强制删除
+		no_support_resource=("nodes" "clean")
+		if echo "${no_support_resource[@]}" | grep -qw "${resouce_name}"; then
+			nosupport "${action_name}"
+			exit 0
+		fi
+		IsContinue "当前是【 强制删除 rm 】请谨慎操作,是否强制删除资源【${param_name}】(Y/N):"
+		kubectl -n ${nameSpace} delete "${resouce_name}" "${param_name}" --grace-period=0 --force
+		if [ $? -eq 0 ]; then 
+			green "资源【${param_name}】 删除成功"
+		else 
+			red "资源【${param_name}】 删除失败"
+		fi
+	;;
 	"Xlogs"|"Xlog") # 输出全部日志
 		# previous
 		previous=${param05}		
@@ -484,6 +503,7 @@ k1s_resource_action() {
 			[[ $? -ne 0 ]] && exit 0
 			cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据 ++++++++++++++++++++++++++ "
 		elif [ "${previous}" = "p" ];then
+			cyan "正在查看先前日志:"
 			# 如果 param06 是数字则将 containerName 设置为空
 			if [ -n "$(echo "${param06}"| sed -n "/^[0-9]\+$/p")" ];then # 表示数字
 				containerName=""
@@ -494,7 +514,7 @@ k1s_resource_action() {
 				if [ -n "$(echo "${showNumber}"| sed -n "/^[0-9]\+$/p")" ];then # 表示数字
 					kubectl -n ${nameSpace} logs -p --tail="${showNumber}" "${param_name}"
 					[[ $? -ne 0 ]] && exit 0
-					cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据 ++++++++++++++++++++++++++ "
+					cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据(previous logs) ++++++++++++++++++++++++++ "
 				else
 					kubectl -n ${nameSpace} logs -p "${param_name}"
 					[[ $? -ne 0 ]] && exit 0
@@ -504,7 +524,7 @@ k1s_resource_action() {
 				if [ -n "$(echo "${showNumber}"| sed -n "/^[0-9]\+$/p")" ];then # 表示数字
 					kubectl -n ${nameSpace} logs -p -c "${containerName}" --tail="${showNumber}" "${param_name}"
 					[[ $? -ne 0 ]] && exit 0
-					cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据 ++++++++++++++++++++++++++ "
+					cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据(previous logs) ++++++++++++++++++++++++++ "
 				else
 					kubectl -n ${nameSpace} logs -p -c "${containerName}" "${param_name}"
 					[[ $? -ne 0 ]] && exit 0
