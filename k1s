@@ -146,7 +146,7 @@ help() {
 		"副本集合资源: 	replicasets / rs "
 		"有状态控制器: 	statefulsets / sts "
 		"水平自动扩缩器: 	horizontalpodautoscalers / hpa "
-		"定时任务器: 	cronjobs / bj "
+		"定时任务器: 	cronjobs / cj "
 		"一次性任务器: 	jobs / job "
 		"Ingresses资源: 	ingresses / ing "
 		"Ingress 分类器: 	ingressclasses / ingc "
