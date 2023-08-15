@@ -4,8 +4,9 @@
 # 作者：百里
 # github: github.com/yezihack/k1s
 # 创建时间：2022/11/24
+# 最后修改时间：2023/08/15
 #################################
-version=2.1.4
+version=2.2.0
 ############参数###########
 # 资源名称
 resource=$1
@@ -27,6 +28,13 @@ param04=$6
 
 # 命名空间
 nameSpace=${K1S_NS:="default"}
+
+#####################################
+# 镜像名称
+base_image=${K1S_IMAGE:="alpine:latest"}
+
+# kubectl 
+k=kubectl
 
 # 存储yaml路径
 savePath=${K1S_PATH:=$PWD}
@@ -123,10 +131,11 @@ help() {
 		"--------------- ↓ ⚙ 操作公式 ↓ ---------------"		
 		"${scriptName} [resources] [资源名称] [action] [extend]"
 		"--------------- ↓ ☆ 特殊资源 ↓ ---------------"
-		"部署/重装:         ${scriptName} apply {资源名称}"
+		"部署/重装:         ${scriptName} apply/a {资源名称}"
 		"进入容器:          ${scriptName} exec/auto,e {资源名称}"
+		"进入NODE:          ${scriptName} x/nsenter {节点名称}"
 		"清理:              ${scriptName} clean {资源名称}"
-		"---------- ↓ ☯ 资源列表(resources)  ↓ ----------"		
+		"---------- ↓ ☯ 资源列表(resources)  ↓ ----------"
 		"组件健康: 		componentstatuses / cs"
 		"配置管理资源: 	configmaps / cm"
 		"端点:		endpoints / ep"
@@ -185,12 +194,14 @@ help() {
 		"查看帮助：         ${scriptName} help|h"
 	)
 	local set_env=(
-		"1. 设置YAML路径的环境变量方式：export K1S_NS=/home/"
-		"2. 设置命名空间的环境变量方式：export K1S_PATH=default"
+		"1. 设置YAML路径的环境变量方式: export K1S_PATH=/home/, 默认为 当前目录"
+		"2. 设置命名空间的环境变量方式: export K1S_NS=default, 默认为 default"
+		"3. 设置基础镜像: export K1S_IMAGE=alpine:latest,默认为 alpine:latest"
 	)
 	local envs=(
 		"1. 当前操作的路径：${savePath}"
 		"2. 当前操作的空间名：${nameSpace}"
+		"3. 当前基础镜像：${base_image}"
 	)
 	cat <<EOF
    _   _   _  
@@ -275,9 +286,76 @@ IsYesNo() {
 	done
 }
 
+# 临时创建 nsenter 容器
+execTemporaryPod() {
+    node=$1
+    if [ -z "${node}" ];then 
+        red "Please input your node name."
+        exit 0
+    fi
+    exist=$($k get node|grep -wc "${node}")
+    if [ "${exist}" -eq 0 ];then
+        red "The node does not exist"
+        exit 0
+    fi
+    cmd='[ "nsenter", "--target", "1", "--mount", "--uts", "--ipc", "--net", "--pid", "--", "bash"]'
+    overrides="$(
+        cat <<EOT
+{
+  "spec": {
+    "enableServiceLinks": false,
+    "nodeName": "$node",
+    "hostPID": true,
+    "hostNetwork": true,
+    "containers": [
+      {
+        "securityContext": {
+          "privileged": true
+        },
+        "image": "${base_image}",
+        "name": "nsenter",
+        "stdin": true,
+        "stdinOnce": true,
+        "tty": true,
+        "command": $cmd
+      }
+    ],
+    "tolerations": [
+      {
+        "operator": "Exists"
+      }
+    ]
+  }
+}
+EOT
+    )"
+    # pod="kube-nodeshell-$(env LC_ALL=C tr -dc a-z0-9 </dev/urandom | head -c 6)"
+    pod="kube-nodeshell-$(uuidgen)"
+    yello "Pod: ${pod}"
+    green "Connecting $node ..."
+    $k run --image="${base_image}" --restart=Never --rm --overrides="$overrides" -it "${pod}"
+	if [ $? -ne 0 ];then 
+		# 判断 pod 是否存在
+		if $k get pod "${pod}" >/dev/null 2>&1; then			
+			red "###################### ERROR INFOMATION #######################"
+			# 分析错误
+			events_msg=$($k describe pod "${pod}" |awk '/Events:/,0')
+			echo "${events_msg}"
+			error_msg=$(echo "$events_msg" | grep -iE 'rpc error|i/o timeout')
+			if [ -n "$error_msg" ]; then
+				yello "如果出现 pull image <${base_image}>: rpc error,说明 node:${node} 没有外网导致的"
+				green "++++++++++++++ TIP +++++++++++++++"
+				cyan "可以设置内网镜像: export K1S_IMAGE=hub.local.io/alpine:latest"
+			fi
+			# 最后删除 pod
+			$k delete pod "${pod}"
+		fi
+    fi
+}
+
 # 判断当前 kubectl 是否小于1.18版本。返回 1则大于等于1.18，0则小于1.18
 IsGtK8sVersion118() {
-	version=$(kubectl version | sed -r "s/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/g" | sed -n '1p')
+	version=$($k version | sed -r "s/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/g" | sed -n '1p')
 	versionNumber=$(echo "${version}" | sed -r "s/[v\.]//g")
 	versionNumber=${versionNumber:0:4}
 	if [ "${versionNumber}" -ge 1180 ]; then
@@ -306,7 +384,7 @@ autoExecPod() {
 	containerName=$2 # 容器名称
 	cyan "++++++++++++++++ 进入 ${param01} pod 容器 ++++++++++++++++"
 	# 从名称中自动获取 pod 名称
-	podsName=$(kubectl get pods -n "${nameSpace}" | grep "${param01}" | sed -n '1p' | awk '{print $1}')
+	podsName=$($k get pods -n "${nameSpace}" | grep "${param01}" | sed -n '1p' | awk '{print $1}')
 	if [ -z "${podsName}" ]; then
 		red "获取 POD 名称失败，请检查或使用 exec-pod 方式。"
 		exit 1
@@ -317,19 +395,19 @@ autoExecPod() {
 	fi
 	if [ -n "${containerName}" ];then 
 		green "进入 ContainerName: ${containerName}"
-		kubectl -n "${nameSpace}" exec -it -c "${containerName}" "${podsName}" /bin/bash
+		$k -n "${nameSpace}" exec -it -c "${containerName}" "${podsName}" /bin/bash
 		# 如果出错的话，尝试另一种方式
 		if [ $? -ne 0 ]; then
 			green "bash 方式失败，正在尝试 sh 方式进入容器："
-			kubectl -n "${nameSpace}" exec -it -c "${containerName}" "${podsName}" sh
+			$k -n "${nameSpace}" exec -it -c "${containerName}" "${podsName}" sh
 		fi
 	else
 		green "进入 ContainerName: 默认第一个容器"
-		kubectl -n "${nameSpace}" exec -it  "${podsName}" /bin/bash
+		$k -n "${nameSpace}" exec -it  "${podsName}" /bin/bash
 		# 如果出错的话，尝试另一种方式
 		if [ $? -ne 0 ]; then
 			green "bash 方式失败，正在尝试 sh 方式进入容器："
-			kubectl -n "${nameSpace}" exec -it "${podsName}" sh
+			$k -n "${nameSpace}" exec -it "${podsName}" sh
 		fi
 	fi	
 }
@@ -378,13 +456,13 @@ check_apply() {
 apply() {
 	tip
 	check_apply
-	kubectl get -f "${fullFile}" &>/dev/null
+	$k get -f "${fullFile}" &>/dev/null
 	if [ $? -eq 1 ]; then
 		cyan "+++++++++++++++++ 新部署 +++++++++++++++++"
 		IsContinue "是否准备好新应用部署：【${param01}】(Y/N):"
 	else
 		cyan "+++++++++++++++++ 重新部署 +++++++++++++++++"
-		kubectl diff -f "${fullFile}"
+		$k diff -f "${fullFile}"
 		IsContinue "观察当前 YAML 的差异, 是否准备好重新部署应用：【${param01}】(Y/N):"
 	fi
 
@@ -392,27 +470,27 @@ apply() {
 	IsGtK8sVersion118
 	ret=$?
 	if [ $ret -eq 1 ]; then
-		kubectl apply -f "${fullFile}" --dry-run=client
+		$k apply -f "${fullFile}" --dry-run=client
 		alert "client 端:模拟运行"
-		kubectl apply -f "${fullFile}" --dry-run=server
+		$k apply -f "${fullFile}" --dry-run=server
 		alert "server 端:模拟运行"
 	else
-		kubectl apply -f "${fullFile}" --dry-run
+		$k apply -f "${fullFile}" --dry-run
 		alert "client 端，模拟运行"
-		kubectl apply -f "${fullFile}" --server-dry-run
+		$k apply -f "${fullFile}" --server-dry-run
 		alert "server 端，模拟运行"
 	fi
 
 	# 真实运行
 	IsContinue "您正在准备运行部署应用名为:【${param01}】,是否确认(Y/N):"
-	kubectl apply -f "${fullFile}"
+	$k apply -f "${fullFile}"
 
 	# 5. 观察应用状态
-	kubectl get -f "${fullFile}"
+	$k get -f "${fullFile}"
 
 	# 6. 查看应用详情
 	IsContinue "是否查看应用:【${param01}】 的部署详情(Y/N):"
-	kubectl describe -f "${fullFile}"
+	$k describe -f "${fullFile}"
 }
 
 # 资源操作大集合
@@ -439,23 +517,23 @@ k1s_resource_action() {
 	case "X${action_name}" in
 	"Xlist" | "Xwide" | "Xw") # 获取资源列表
 		if [ -z "${param_name}" ];then
-			kubectl -n ${nameSpace} get "${resouce_name}"
+			$k -n ${nameSpace} get "${resouce_name}"
 		elif [ "${param_name}" = "wide" ] || [ "${param_name}" = "w" ]; then 
-			kubectl -n ${nameSpace} get "${resouce_name}" -o wide
+			$k -n ${nameSpace} get "${resouce_name}" -o wide
 		elif [ "${action_name}" = "wide" ] || [ "${action_name}" = "w" ]; then
-			kubectl -n ${nameSpace} get "${resouce_name}" "${param_name}" -o wide
+			$k -n ${nameSpace} get "${resouce_name}" "${param_name}" -o wide
 		else 
-			kubectl -n ${nameSpace} get "${resouce_name}" "${param_name}"
+			$k -n ${nameSpace} get "${resouce_name}" "${param_name}"
 		fi
 	;;
 	"Xlike") # 模糊查找
-		kubectl -n ${nameSpace} get "${resouce_name}" |grep -i "${param_name}"
+		$k -n ${nameSpace} get "${resouce_name}" |grep -i "${param_name}"
 	;;
 	"Xdescribe" | "Xdesc") # 查看资源详情
-		kubectl -n ${nameSpace} describe "${resouce_name}" "${param_name}"
+		$k -n ${nameSpace} describe "${resouce_name}" "${param_name}"
 	;;
 	"Xyaml" | "Xyml" | "Xy") # 查看资源YAML
-		kubectl -n ${nameSpace} get "${resouce_name}" "${param_name}" -o yaml
+		$k -n ${nameSpace} get "${resouce_name}" "${param_name}" -o yaml
 	;;
 	"Xexec"| "Xe" | "Xauto") # 进入容器，只限 pods
 		if [ "${resouce_name}" = "pods" ];then
@@ -472,7 +550,7 @@ k1s_resource_action() {
 			exit 0
 		fi
 		IsContinue "当前是【delete】请谨慎操作,是否删除资源【${param_name}】(Y/N):"
-		kubectl -n ${nameSpace} delete "${resouce_name}" "${param_name}"
+		$k -n ${nameSpace} delete "${resouce_name}" "${param_name}"
 		if [ $? -eq 0 ]; then 
 			green "资源【${param_name}】 删除成功"
 		else 
@@ -486,7 +564,7 @@ k1s_resource_action() {
 			exit 0
 		fi
 		IsContinue "当前是【 强制删除 rm 】请谨慎操作,是否强制删除资源【${param_name}】(Y/N):"
-		kubectl -n ${nameSpace} delete "${resouce_name}" "${param_name}" --grace-period=0 --force
+		$k -n ${nameSpace} delete "${resouce_name}" "${param_name}" --grace-period=0 --force
 		if [ $? -eq 0 ]; then 
 			green "资源【${param_name}】 删除成功"
 		else 
@@ -499,7 +577,7 @@ k1s_resource_action() {
 		containerName=${param06}		
 		if [ -n "$(echo "${previous}"| sed -n "/^[0-9]\+$/p")" ];then # 表示数字
 			showNumber=${previous}
-			kubectl -n ${nameSpace} logs --tail="${showNumber}" "${param_name}"
+			$k -n ${nameSpace} logs --tail="${showNumber}" "${param_name}"
 			[[ $? -ne 0 ]] && exit 0
 			cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据 ++++++++++++++++++++++++++ "
 		elif [ "${previous}" = "p" ];then
@@ -512,21 +590,21 @@ k1s_resource_action() {
 			if [ -z "${containerName}" ];then 
 				showNumber=${param06}
 				if [ -n "$(echo "${showNumber}"| sed -n "/^[0-9]\+$/p")" ];then # 表示数字
-					kubectl -n ${nameSpace} logs -p --tail="${showNumber}" "${param_name}"
+					$k -n ${nameSpace} logs -p --tail="${showNumber}" "${param_name}"
 					[[ $? -ne 0 ]] && exit 0
 					cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据(previous logs) ++++++++++++++++++++++++++ "
 				else
-					kubectl -n ${nameSpace} logs -p "${param_name}"
+					$k -n ${nameSpace} logs -p "${param_name}"
 					[[ $? -ne 0 ]] && exit 0
 				fi
 			else 
 				showNumber=${param07}
 				if [ -n "$(echo "${showNumber}"| sed -n "/^[0-9]\+$/p")" ];then # 表示数字
-					kubectl -n ${nameSpace} logs -p -c "${containerName}" --tail="${showNumber}" "${param_name}"
+					$k -n ${nameSpace} logs -p -c "${containerName}" --tail="${showNumber}" "${param_name}"
 					[[ $? -ne 0 ]] && exit 0
 					cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据(previous logs) ++++++++++++++++++++++++++ "
 				else
-					kubectl -n ${nameSpace} logs -p -c "${containerName}" "${param_name}"
+					$k -n ${nameSpace} logs -p -c "${containerName}" "${param_name}"
 					[[ $? -ne 0 ]] && exit 0
 				fi
 			fi
@@ -536,17 +614,17 @@ k1s_resource_action() {
 			containerName=${param05}
 			if [ -z "${containerName}" ];then 
 				if [ -n "$(echo "${showNumber}"| sed -n "/^[0-9]\+$/p")" ];then # 表示数字
-					kubectl -n ${nameSpace} logs --tail="${showNumber}" "${param_name}"
+					$k -n ${nameSpace} logs --tail="${showNumber}" "${param_name}"
 					cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据 ++++++++++++++++++++++++++ "
 				else
-					kubectl -n ${nameSpace} logs "${param_name}"
+					$k -n ${nameSpace} logs "${param_name}"
 				fi				
 			else 
 				if [ -n "$(echo "${showNumber}"| sed -n "/^[0-9]\+$/p")" ];then # 表示数字
-					kubectl -n ${nameSpace} logs -c "${containerName}" --tail="${showNumber}" "${param_name}"
+					$k -n ${nameSpace} logs -c "${containerName}" --tail="${showNumber}" "${param_name}"
 					cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据 ++++++++++++++++++++++++++ "
 				else
-					kubectl -n ${nameSpace} logs -c "${containerName}" "${param_name}"
+					$k -n ${nameSpace} logs -c "${containerName}" "${param_name}"
 				fi			
 			fi
 		fi
@@ -560,11 +638,11 @@ k1s_resource_action() {
 			showNumber=50
 		fi
 		if [ -z "${containerName}" ];then
-			kubectl -n ${nameSpace} logs --tail=${showNumber} "${param_name}"
+			$k -n ${nameSpace} logs --tail=${showNumber} "${param_name}"
 			[[ $? -ne 0 ]] && exit 0
 		else
 			green "正在查看:【${containerName}】Container Name 日志"
-			kubectl -n ${nameSpace} logs --tail=${showNumber} -c "${containerName}" "${param_name}"
+			$k -n ${nameSpace} logs --tail=${showNumber} -c "${containerName}" "${param_name}"
 			[[ $? -ne 0 ]] && exit 0
 		fi		
 		cyan "++++++++++++++++++++++++++ 显示最近 ${showNumber} 条数据 ++++++++++++++++++++++++++ "
@@ -575,16 +653,16 @@ k1s_resource_action() {
 		cyan "+++++++++++++++++ 动态监听日志 +++++++++++++++++"
 		if [ -n "${containerName}" ];then 
 			green "正在查看:【${containerName}】Container Name 日志"
-			kubectl -n ${nameSpace} logs -f --tail=15 -c ${containerName} "${param_name}"
+			$k -n ${nameSpace} logs -f --tail=15 -c ${containerName} "${param_name}"
 			[[ $? -ne 0 ]] && exit 0
 		else
-			kubectl -n ${nameSpace} logs -f --tail=15 "${param_name}"
+			$k -n ${nameSpace} logs -f --tail=15 "${param_name}"
 			[[ $? -ne 0 ]] && exit 0
 		fi
 	;;	
 	"Xedit") # 编辑 YAML	
 		cyan "+++++++++++++++++ 编辑 ${param_name} YAML +++++++++++++++++"
-		kubectl -n ${nameSpace} edit "${resouce_name}" "${param_name}"
+		$k -n ${nameSpace} edit "${resouce_name}" "${param_name}"
 	;;	
 	esac
 }
@@ -598,17 +676,17 @@ clean() {
 			IsYesNo "是否查找 ${errMsg} 错误的POD，确认(Y/N):"
 			local result=$?
 			if [ ${result} -eq 0 ]; then
-				count=$(kubectl get pods -n "${param01}" | grep -c "${errMsg}")
+				count=$($k get pods -n "${param01}" | grep -c "${errMsg}")
 				if [ "${count}" -gt 0 ]; then
 					IsYesNo "空间：${param01}，错误：${errMsg}，共: ${count} 条数，是否需要清理(Y/N):"
 					result=$?
 					if [ ${result} -eq 0 ]; then
 						green "开始清理..."
 						local i=0
-						for errPodsName in $(kubectl get pods -n "${param01}" | grep "${errMsg}" | awk '{print $1}'); do
+						for errPodsName in $($k get pods -n "${param01}" | grep "${errMsg}" | awk '{print $1}'); do
 							((i++))
 							red "正在处理: ${i}/${count} ${errPodsName}"
-							kubectl delete pods -n "${param01}" "${errPodsName}" --grace-period=0 --force
+							$k delete pods -n "${param01}" "${errPodsName}" --grace-period=0 --force
 						done
 					fi
 				else
@@ -623,7 +701,7 @@ clean() {
 			local result=$?
 			if [ ${result} -eq 0 ]; then
 				green "正在统计不同空间下的 ${errMsg} 数据："
-				kubectl get pods -A | grep "${errMsg}" | awk '{print $1}' | uniq -c
+				$k get pods -A | grep "${errMsg}" | awk '{print $1}' | uniq -c
 
 			fi
 		done
@@ -637,6 +715,9 @@ main() {
 	case "X${resource}" in
 	"Xapply" | "Xp")
 		apply
+		;;
+	"Xx" | "Xnsenter") # node-shell
+		execTemporaryPod "$2"
 		;;
 	"Xexec" | "Xauto" | "Xe")
 		autoExecPod "$2" "$3"
@@ -723,7 +804,7 @@ main() {
 		in_resource="roles"		
 		;;
 	"Xall")
-		kubectl -n "${nameSpace}" get all
+		$k -n "${nameSpace}" get all
 		;;
 	"Xclean" | "Xc")
 		clean

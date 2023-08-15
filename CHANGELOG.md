@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.2.0
+
+- 新增：nsenter 功能，实现进入 node 宿主机，方便调试。
+
 ## 2.1.4
 
 - rm 实现：--force --grace-period=0 ok

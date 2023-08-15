@@ -1,0 +1,119 @@
+#!/bin/bash
+#####################################
+# ns 全称：node_shell 调试宿主容器工具
+#####################################
+
+k=kubectl
+image_addr="alpine:3.18.3"
+
+# 提示
+green() {
+	local val=$1
+	echo -e "\033[32m${val}\033[0m"
+}
+# 禁止
+red() {
+	local val=$1
+	echo -e "\033[31m${val}\033[0m"
+}
+# 警告
+yello() {
+	local val=$1
+	echo -e "\033[33m${val}\033[0m"
+}
+
+
+function find_node_list() {
+    $k get node
+}
+
+help() {
+    project_name=$(basename $0)
+    cat <<EOF
+帮助说明：
+    1. ${project_name} -n | -l | --node 查询节点列表
+    2. ${project_name} -e | --exec <node name> 进入某节点
+    3. ${project_name} -c | --kubeconfig 设置 kubeconfig 连接信息
+    4. ${project_name} -i | --cluster-info 查看当前集群状态
+EOF
+}
+
+function exec_temporary_pod() {
+    node=$1
+    if [ -z "${node}" ];then 
+        red "Please input your node name."
+        help
+        exit 0
+    fi
+    exist=$($k get node|grep -wc "${node}")
+    if [ "${exist}" -eq 0 ];then
+        red "The node does not exist"
+        help
+        exit 0
+    fi
+    cmd='[ "nsenter", "--target", "1", "--mount", "--uts", "--ipc", "--net", "--pid", "--", "bash"]'
+    overrides="$(
+        cat <<EOT
+{
+  "spec": {
+    "enableServiceLinks": false,
+    "nodeName": "$node",
+    "hostPID": true,
+    "hostNetwork": true,
+    "containers": [
+      {
+        "securityContext": {
+          "privileged": true
+        },
+        "image": "${image_addr}",
+        "name": "nsenter",
+        "stdin": true,
+        "stdinOnce": true,
+        "tty": true,
+        "command": $cmd
+      }
+    ],
+    "tolerations": [
+      {
+        "operator": "Exists"
+      }
+    ]
+  }
+}
+EOT
+    )"
+    # pod="kube-nodeshell-$(env LC_ALL=C tr -dc a-z0-9 </dev/urandom | head -c 6)"
+    pod="kube-nodeshell-$(uuidgen)"
+    yello "Pod: ${pod}"
+    green "Connecting $node ..."
+    $k run --image=${image_addr} --request-timeout=5s --restart=Never --rm --overrides="$overrides" -it "${pod}"
+    if [ $? -ne 0 ];then 
+      red "###################### ERROR INFOMATION #######################"
+      $k describe pod "${pod}" |grep -A 1000 -i Events
+      $k delete pod "${pod}"
+    fi
+}
+
+main() {
+    action=$1
+    second_param=$2
+    case "${action}" in
+        -n | -l | --node)
+            find_node_list
+        ;;
+        -e | --exec )
+            exec_temporary_pod "${second_param}"
+        ;;
+        -c | --kubeconfig)
+            $k --kubeconfig "${second_param}"
+        ;;
+        -i | --cluster-info)
+            $k cluster-info
+        ;;
+        *)
+            help
+        ;;
+    esac
+}
+
+main "$@"

@@ -18,13 +18,14 @@
     - [6.1. 设置环境变量](#61-设置环境变量)
     - [6.2. 日志查看](#62-日志查看)
     - [6.3. 进入容器](#63-进入容器)
-    - [6.4. 资源操作](#64-资源操作)
-      - [6.4.1. nodes 资源](#641-nodes-资源)
-      - [6.4.2. pods 资源](#642-pods-资源)
-      - [6.4.3. deployments 资源](#643-deployments-资源)
-      - [6.4.4. daemonsets 资源](#644-daemonsets-资源)
-      - [6.4.5. services 资源](#645-services-资源)
-      - [6.4.6. 清理垃圾](#646-清理垃圾)
+    - [6.4. 调试宿主机](#64-调试宿主机)
+    - [6.5. 资源操作](#65-资源操作)
+      - [6.5.1. nodes 资源](#651-nodes-资源)
+      - [6.5.2. pods 资源](#652-pods-资源)
+      - [6.5.3. deployments 资源](#653-deployments-资源)
+      - [6.5.4. daemonsets 资源](#654-daemonsets-资源)
+      - [6.5.5. services 资源](#655-services-资源)
+      - [6.5.6. 清理垃圾](#656-清理垃圾)
 
 <!-- /TOC -->
 
@@ -55,6 +56,7 @@ k1s 主要是用于 kubernetes 管理的命令行工具。对 kubectl 命令实�
 - 缩减命令长度。
 - 使用更人性化的组合操作。如日志，进入容器等，见下文的实例。
 - 支持部署或更新 YAML 前的差异显示与模拟。
+- 进入工作节点调试。
 
 ## 3. 安装
 
@@ -115,6 +117,9 @@ k1s po xxx rm
 
 # 查看所有服务
 k1s all
+
+# 调试 node 宿主机 
+k1s x <node name>
 ```
 
 ## 5. 功能
@@ -167,8 +172,9 @@ k1s resources <param> action <extend>
 | --- | ----- | ----- | ----------------- |
 | 1   | apply | p | 开始部署/重新部署 |
 | 2   | exec  | auto, e | 进入容器 |
-| 3   | clean | c | 清理无用 Pod      |
-| 3   | all | all | 查看所有服务    |
+| 3   | nsenter  | x | 调试 Node 节点 |
+| 4  | clean | c | 清理无用 Pod      |
+| 5   | all | all | 查看所有服务    |
 
 ### 5.3. Action 列表
 
@@ -203,6 +209,7 @@ k1s resources <param> action <extend>
 | --- | -------- | ------- | -------------------------- |
 | 1   | K1S_NS   | default | 命名空间名称               |
 | 2   | K1S_PATH | ~       | 构建目录，默认本用户目录下 |
+| 2   | K1S_IMAGE |  alpine:latest    | 基础镜像，调试宿主机使用 |
 
 ## 6. 使用说明
 
@@ -217,6 +224,9 @@ export K1S_NS=default
 # 设置构建路径，主要用于 apply 部署或重建时用到。
 ## 如果不设置路径则动态选择当前目录
 export K1S_PATH=/home/dev/
+
+# 基础镜像，调试宿主机使用
+export K1S_IMAGE=alpine:latest
 ```
 
 小技巧：对于常操作的命令空间，可以设置别名
@@ -291,7 +301,29 @@ k1s po kube-cc-7789c5f6d6-szqwk exec
 k1s po kube-cc-7789c5f6d6-szqwk exec client
 ```
 
-### 6.4. 资源操作
+### 6.4. 调试宿主机
+
+如果您的集群无外网，则无法下载基础镜像，需要设置内网镜像
+
+```sh
+export K1S_IMAGE="hub.local.io/alpine:lateset"
+```
+
+基础操作命令：
+
+```sh
+# 查看 node 列表
+k1s no 
+
+NAME           STATUS   ROLES                  AGE   VERSION
+192.168.1.100   Ready    gpu                    68d   v1.23.3
+
+
+# 进入宿主机
+k1s x 192.168.1.100
+```
+
+### 6.5. 资源操作
 
 只列举常用的几种资源，其它资源查找大同小异。
 
@@ -312,7 +344,7 @@ k1s po kube-cc-7789c5f6d6-szqwk exec client
 - delete 删除资源
 - log 日志
 
-#### 6.4.1. nodes 资源
+#### 6.5.1. nodes 资源
 
 > 别名：nodes, node, no
 
@@ -342,7 +374,7 @@ k1s no kube-10 yaml
 k1s no kube-10 desc
 ```
 
-#### 6.4.2. pods 资源
+#### 6.5.2. pods 资源
 
 > 别名：pods, po, ps
 
@@ -376,7 +408,7 @@ k1s po kube-box-685fb75bb-cvmgz desc
 k1s po kube-box-685fb75bb-cvmgz delete
 ```
 
-#### 6.4.3. deployments 资源
+#### 6.5.3. deployments 资源
 
 > 别名：deployments, deploy, d
 
@@ -406,7 +438,7 @@ k1s d kube-box yaml
 k1s d kube-box desc
 ```
 
-#### 6.4.4. daemonsets 资源
+#### 6.5.4. daemonsets 资源
 
 > 别名：daemonsets, ds
 
@@ -436,7 +468,7 @@ k1s ds kube-proxy yaml
 k1s ds kube-proxy desc
 ```
 
-#### 6.4.5. services 资源
+#### 6.5.5. services 资源
 
 > 别名：services, svc
 
@@ -466,7 +498,7 @@ k1s svc kube-dns yaml
 k1s svc kube-dns desc
 ```
 
-#### 6.4.6. 清理垃圾
+#### 6.5.6. 清理垃圾
 
 ```sh
 # 查看不同空间下统计的错误信息
