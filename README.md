@@ -220,13 +220,19 @@ k1s resources <param> action <extend>
 ```sh
 # 设置命名空间名称
 export K1S_NS=default
+## 或者
+export K1N=default
 
 # 设置构建路径，主要用于 apply 部署或重建时用到。
 ## 如果不设置路径则动态选择当前目录
 export K1S_PATH=/home/dev/
+## 或者
+export K1P=/home/dev/
 
 # 基础镜像，调试宿主机使用
 export K1S_IMAGE=alpine:latest
+## 或者
+export K1I=alpine:latest
 ```
 
 小技巧：对于常操作的命令空间，可以设置别名
