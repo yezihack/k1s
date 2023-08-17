@@ -6,7 +6,7 @@
 # 创建时间：2022/11/24
 # 最后修改时间：2023/08/15
 #################################
-version=2.2.0
+version=2.2.1
 ############参数###########
 # 资源名称
 resource=$1
@@ -28,19 +28,21 @@ param04=$6
 
 # 命名空间
 nameSpace=${K1S_NS:="default"}
+[ -n "${K1N}" ] && nameSpace="${K1N}"
 
 #####################################
 # 镜像名称
 base_image=${K1S_IMAGE:="alpine:latest"}
-
-# kubectl 
-k=kubectl
+[ -n "${K1I}" ] && base_image="${K1I}"
 
 # 存储yaml路径
 savePath=${K1S_PATH:=$PWD}
 # 判断是否以 / 结尾，自动补全
 [[ ${savePath: -1} != "/" ]] && savePath="${savePath}/"
+[ -n "${K1P}" ] && savePath="${K1P}"
 
+# kubectl 
+k=kubectl
 ###########################
 # 错误列表，用于删除
 err_list=(
@@ -178,25 +180,26 @@ help() {
 		"编辑 YAML: 	edit"		
 		"--------------- ↓ ☀ 实例(Example) ↓ ---------------"
 		"查看 pod 列表: 			${scriptName} po"
-		"查看 pod 详情: 			${scriptName} po kube-cc-7789c5f6d6-szqwk desc"
-		"查看 pod 日志: 			${scriptName} po kube-cc-7789c5f6d6-szqwk log"
-		"查看 pod 日志(先前日志): 		${scriptName} po kube-cc-7789c5f6d6-szqwk log p"
-		"查看 pod 日志(c): 			${scriptName} po kube-cc-7789c5f6d6-szqwk log client (client 表示容器名称)"
-		"查看 pod 日志(c,先前日志):		${scriptName} po kube-cc-7789c5f6d6-szqwk log p client (client 表示容器名称)"
-		"查看 pod 最近日志: 		${scriptName} po kube-cc-7789c5f6d6-szqwk log 10"		
-		"监听 pod 日志: 			${scriptName} po kube-cc-7789c5f6d6-szqwk tailf"
-		"进入 pod 容器: 			${scriptName} po kube-cc-7789c5f6d6-szqwk exec"
-		"进入 pod 容器(c): 			${scriptName} po kube-cc-7789c5f6d6-szqwk exec client (client 表示容器名称)"
-		"编辑 YAML:				${scriptName} po kube-cc-7789c5f6d6-szqwk edit"
-		"删除 pod:				${scriptName} po kube-cc-7789c5f6d6-szqwk del"
-		"强制删除 pod:			${scriptName} po kube-cc-7789c5f6d6-szqwk rm"
+		"查看 pod 详情: 			${scriptName} po kube-pod-xxx desc"
+		"查看 pod 日志: 			${scriptName} po kube-pod-xxx log"
+		"查看 pod 日志(先前日志): 		${scriptName} po kube-pod-xxx log p"
+		"查看 pod 日志(c): 			${scriptName} po kube-pod-xxx log client (client 表示容器名称)"
+		"查看 pod 日志(c,先前日志):		${scriptName} po kube-pod-xxx log p client (client 表示容器名称)"
+		"查看 pod 最近日志: 		${scriptName} po kube-pod-xxx log 10"		
+		"监听 pod 日志: 			${scriptName} po kube-pod-xxx tailf"
+		"进入 pod 容器: 			${scriptName} po kube-pod-xxx exec"
+		"进入 pod 容器(c): 			${scriptName} po kube-pod-xxx exec client (client 表示容器名称)"
+		"编辑 YAML:				${scriptName} po kube-pod-xxx edit"
+		"删除 pod:				${scriptName} po kube-pod-xxx del"
+		"强制删除 pod:			${scriptName} po kube-pod-xxx rm"
+		"调试 node:			${scriptName} x kube-node-xxx"
 		"--------------- ↓ ❤ 帮助(Help) ↓ ---------------"
 		"查看帮助：         ${scriptName} help|h"
 	)
 	local set_env=(
-		"1. 设置YAML路径的环境变量方式: export K1S_PATH=/home/, 默认为 当前目录"
-		"2. 设置命名空间的环境变量方式: export K1S_NS=default, 默认为 default"
-		"3. 设置基础镜像: export K1S_IMAGE=alpine:latest,默认为 alpine:latest"
+		"1. 设置YAML路径的环境变量方式: export K1S_PATH=/home/ 或 export K1P=/home/, 默认为 当前目录"
+		"2. 设置命名空间的环境变量方式: export K1S_NS=default 或 export K1N=default, 默认为 default"
+		"3. 设置基础镜像: export K1S_IMAGE=alpine:latest 或 export K1I=alpine:latest,默认为 alpine:latest"
 	)
 	local envs=(
 		"1. 当前操作的路径：${savePath}"

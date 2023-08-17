@@ -37,7 +37,7 @@
  ( k | 1 | s )
   \_/ \_/ \_/
         by 百里(github.com/yezihack/k1s)
- version: 2.0.0
+ version: 2.2.1
 ```
 
 [![asciicast](https://asciinema.org/a/541172.svg)](https://asciinema.org/a/541172)
@@ -205,11 +205,11 @@ k1s resources <param> action <extend>
 
 ### 5.5. 环境变量
 
-| No  | Name     | Default | Describe                   |
-| --- | -------- | ------- | -------------------------- |
-| 1   | K1S_NS   | default | 命名空间名称               |
-| 2   | K1S_PATH | ~       | 构建目录，默认本用户目录下 |
-| 2   | K1S_IMAGE |  alpine:latest    | 基础镜像，调试宿主机使用 |
+| No  | Name  | 简写   | Default | Describe                   |
+| --- | -------- | ------- | ------- | -------------------------- |
+| 1   | K1S_NS   | K1N| default | 命名空间名称               |
+| 2   | K1S_PATH| K1P | ~       | 构建目录，默认本用户目录下 |
+| 2   | K1S_IMAGE | K1I|  alpine:latest    | 基础镜像，调试宿主机使用(K1I最后字母是大写i) |
 
 ## 6. 使用说明
 
