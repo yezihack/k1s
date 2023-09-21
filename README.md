@@ -1,34 +1,6 @@
 [![k1s](https://img.shields.io/badge/kubernetes-k1s-green?style=flat-square&logo=appveyor)](https://github.com/yezihack/k1s)
 [![GitHub license](https://img.shields.io/github/license/yezihack/k1s?style=flat-square&logo=appveyor)](https://github.com/yezihack/k1s/blob/master/LICENSE)
 
-<!-- TOC -->
-
-- [k1s 是 kubectl 辅助工具](#k1s-是-kubectl-辅助工具)
-  - [1. 什么是 k1s](#1-什么是-k1s)
-  - [2. k1s 特色](#2-k1s-特色)
-  - [3. 安装](#3-安装)
-  - [4. 快速上手](#4-快速上手)
-  - [5. 功能](#5-功能)
-    - [5.1. Resources 列表( kubectl 系统对应)](#51-resources-列表-kubectl-系统对应)
-    - [5.2. Resources 列表(扩展功能)](#52-resources-列表扩展功能)
-    - [5.3. Action 列表](#53-action-列表)
-    - [5.4. Extend 扩展功能](#54-extend-扩展功能)
-    - [5.5. 环境变量](#55-环境变量)
-  - [6. 使用说明](#6-使用说明)
-    - [6.1. 设置环境变量](#61-设置环境变量)
-    - [6.2. 日志查看](#62-日志查看)
-    - [6.3. 进入容器](#63-进入容器)
-    - [6.4. 调试宿主机](#64-调试宿主机)
-    - [6.5. 资源操作](#65-资源操作)
-      - [6.5.1. nodes 资源](#651-nodes-资源)
-      - [6.5.2. pods 资源](#652-pods-资源)
-      - [6.5.3. deployments 资源](#653-deployments-资源)
-      - [6.5.4. daemonsets 资源](#654-daemonsets-资源)
-      - [6.5.5. services 资源](#655-services-资源)
-      - [6.5.6. 清理垃圾](#656-清理垃圾)
-
-<!-- /TOC -->
-
 # k1s 是 kubectl 辅助工具
 
 ```text
