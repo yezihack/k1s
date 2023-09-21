@@ -166,6 +166,9 @@ help() {
 		"RBAC 集群角色: 	clusterroles / cr "
 		"RBAC 角色绑定: 	rolebindings / rb "
 		"RBAC 角色: 	roles / ro "
+		"StorageClass 资源: StorageClass/sc "
+		"---------- ↓ ☯ 资源列表(CRD)  ↓ ----------"
+		"ServiceMonitor: 	servicemonitor / sm "
 		"--------------- ↓ 🛠 动作(Action) ↓ ---------------"
 		"显示列表: 		list / ls"
 		"查看详情: 		describe / desc"
@@ -192,7 +195,7 @@ help() {
 		"编辑 YAML:				${scriptName} po kube-pod-xxx edit"
 		"删除 pod:				${scriptName} po kube-pod-xxx del"
 		"强制删除 pod:			${scriptName} po kube-pod-xxx rm"
-		"调试 node:			${scriptName} x kube-node-xxx"
+		"调试 node:				${scriptName} x kube-node-xxx"
 		"--------------- ↓ ❤ 帮助(Help) ↓ ---------------"
 		"查看帮助：         ${scriptName} help|h"
 	)
@@ -806,6 +809,12 @@ main() {
 	"Xroles" | "Xro")
 		in_resource="roles"		
 		;;
+	"Xservicemonitor" | "Xsm")
+		in_resource="ServiceMonitor"		
+		;;		
+	"XStorageClass" | "Xsc")
+		in_resource="StorageClass"		
+		;;		
 	"Xall")
 		$k -n "${nameSpace}" get all
 		;;
