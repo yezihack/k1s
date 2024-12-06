@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 ##################################
 # 名称：kubernetes kubectl 扩展功能
-# 作者：百里
+# 作者：yezi
 # github: github.com/yezihack/k1s
 # 创建时间：2022/11/24
-# 最后修改时间：2024/07.08
+# 最后修改时间：2024/11/06
 #################################
-version=2.2.2
+version=2.2.3
 ############参数###########
 # 资源名称
 resource=$1
@@ -167,6 +167,7 @@ help() {
 		"RBAC 角色绑定: 	rolebindings / rb "
 		"RBAC 角色: 	roles / ro "
 		"StorageClass 资源: StorageClass/sc "
+		"NetworkPolicies 资源: networkpolicies/np "
 		"---------- ↓ ☯ 资源列表(CRD)  ↓ ----------"
 		"ServiceMonitor: 	servicemonitor / sm "
 		"--------------- ↓ 🛠 动作(Action) ↓ ---------------"
@@ -195,7 +196,7 @@ help() {
 		"编辑 YAML:				${scriptName} po kube-pod-xxx edit"
 		"删除 pod:				${scriptName} po kube-pod-xxx del"
 		"强制删除 pod:			${scriptName} po kube-pod-xxx rm"
-		"调试 node:				${scriptName} x kube-node-xxx"
+		"调试 node:				${scriptName} x node-xxx"
 		"--------------- ↓ ❤ 帮助(Help) ↓ ---------------"
 		"查看帮助：         ${scriptName} help|h"
 	)
@@ -755,7 +756,7 @@ main() {
 	"Xpersistentvolumes" | "Xpv")
 		in_resource="persistentvolumes"
 		;;
-	"Xpods" | "Xpo" | "Xps")
+	"Xpods"  | "Xpod" | "Xpo" | "Xps")
 		in_resource="pods"
 		;;
 	"Xreplicationcontrollers" | "Xrc")
@@ -814,7 +815,10 @@ main() {
 		;;		
 	"XStorageClass" | "Xsc")
 		in_resource="StorageClass"		
-		;;		
+		;;
+	"Xnetworkpolicies" | "Xnetpol" | "Xnp")
+		in_resource="networkpolicies"		
+		;;
 	"Xall")
 		$k -n "${nameSpace}" get all
 		;;
