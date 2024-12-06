@@ -14,10 +14,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 调试文件路径
+      - name: Show working directory and files
+        run: |
+          pwd
+          ls -la
+
+      # 检查文件是否存在
+      - name: Verify files exist
+        run: |
+          if [ ! -f "k1s" ] || [ ! -f "README.md" ]; then
+            echo "Error: Required files are missing!"
+            exit 1
+          fi
+
       # 打包 k1s 和 README.md 文件
       - name: Package files
         run: |
-          mkdir release_files
+          mkdir -p release_files
           cp k1s README.md release_files/
           tar -czvf release_files.tar.gz -C release_files .
 
