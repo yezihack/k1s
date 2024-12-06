@@ -167,7 +167,7 @@ help() {
 		"RBAC 角色绑定: 	rolebindings / rb "
 		"RBAC 角色: 	roles / ro "
 		"StorageClass 资源: StorageClass/sc "
-		"NetworkPolicies 资源: networkpolicies/np "
+		"NetworkPolicies 资源: networkpolicies/netpol/np"
 		"---------- ↓ ☯ 资源列表(CRD)  ↓ ----------"
 		"ServiceMonitor: 	servicemonitor / sm "
 		"--------------- ↓ 🛠 动作(Action) ↓ ---------------"
