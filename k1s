@@ -183,6 +183,7 @@ help() {
 		"模糊查找: 		like"		
 		"编辑 YAML: 	edit"		
 		"--------------- ↓ ☀ 实例(Example) ↓ ---------------"
+		"所有 pod 列表: 			${scriptName} po -A"
 		"查看 pod 列表: 			${scriptName} po"
 		"查看 pod 详情: 			${scriptName} po kube-pod-xxx desc"
 		"查看 pod 日志: 			${scriptName} po kube-pod-xxx log"
