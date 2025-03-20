@@ -6,8 +6,11 @@
 # 创建时间：2022/11/24
 # 最后修改时间：2024/11/06
 #################################
-version=2.2.3
+version=2.2.4
 ############参数###########
+# 定义一个缓存目录
+CACHEDIR=${K1S_CACHE_DIR:="$HOME/.k1s"}
+CACHEFILE=""
 # 资源名称
 resource=$1
 
@@ -28,18 +31,18 @@ param04=$6
 
 # 命名空间
 nameSpace=${K1S_NS:="default"}
-[ -n "${K1N}" ] && nameSpace="${K1N}"
+[ -n "${K1N}" ] || [ -n "${k1n}" ] && nameSpace="${K1N}"
 
 #####################################
 # 镜像名称
 base_image=${K1S_IMAGE:="alpine:latest"}
-[ -n "${K1I}" ] && base_image="${K1I}"
+[ -n "${K1I}" ] || [ -n "${k1i}" ] && base_image="${K1I}"
 
 # 存储yaml路径
 savePath=${K1S_PATH:=$PWD}
 # 判断是否以 / 结尾，自动补全
 [[ ${savePath: -1} != "/" ]] && savePath="${savePath}/"
-[ -n "${K1P}" ] && savePath="${K1P}"
+[ -n "${K1P}" ] || [ -n "${k1p}" ] && savePath="${K1P}"
 
 # kubectl 
 k=kubectl
@@ -202,9 +205,10 @@ help() {
 		"查看帮助：         ${scriptName} help|h"
 	)
 	local set_env=(
-		"1. 设置YAML路径的环境变量方式: export K1S_PATH=/home/ 或 export K1P=/home/, 默认为 当前目录"
-		"2. 设置命名空间的环境变量方式: export K1S_NS=default 或 export K1N=default, 默认为 default"
-		"3. 设置基础镜像: export K1S_IMAGE=alpine:latest 或 export K1I=alpine:latest,默认为 alpine:latest"
+		"1. 设置YAML路径的环境变量方式: export K1P=/home/ or export k1p=/home/, 默认为 当前目录"
+		"2. 设置命名空间的环境变量方式: export K1N=default or export k1n=default, 默认为 default"
+		"3. 设置基础镜像: export K1I=alpine:latest or export k1i=alpine:latest, 默认为 alpine:latest"
+		"4. 设置缓存目录: export K1S_CACHE_DIR=\"$HOME/.k1s\" or export k1s_cache_dir=\"$HOME/.k1s\", 默认为 $HOME/.k1s"
 	)
 	local envs=(
 		"1. 当前操作的路径：${savePath}"
@@ -292,6 +296,35 @@ IsYesNo() {
 			;;
 		esac
 	done
+}
+
+# 获取当前集群ID，然后缓存整个集群资源信息,5分钟更新一次
+func_cache() {
+	local cluster_id,last_update,current_time,time_diff
+	cluster_id=$( config view --minify -o jsonpath='{.clusters[0].cluster.server}'|md5sum|awk '{print $1}')
+	CACHEFILE="${CACHEDIR}/${cluster_id}.cache"
+	if [ ! -f "${CACHEFILE}" ];then
+		touch "${CACHEFILE}"
+	fi
+	
+	# 如果文件存在，则检查是否需要更新
+	if [ -f "${CACHEFILE}" ];then
+		last_update=$(stat -c %Y "${CACHEFILE}")
+		current_time=$(date +%s)
+		time_diff=$((current_time - last_update))
+		if [ "${time_diff}" -gt 300 ];then
+			# 第1列是空间名，第2列是资源名称
+			$k get po -A|tail -n +1|awk '{print $1,$2}' > "${CACHEFILE}"
+		fi
+	fi
+}
+
+# 根据关键字，在缓存里查找，自动搜索空间名或资源名称，第1列是空间名，第2列是资源名称
+func_ai_change() {
+	local keyword=$1
+	local result
+	result=$(grep -E "${keyword}" "${CACHEFILE}"|awk '!seen[$1]++')
+	echo "${result}"
 }
 
 # 临时创建 nsenter 容器
@@ -717,7 +750,8 @@ clean() {
 	fi
 }
 
-main() {	
+main() {
+	func_cache
 	## 资源名称
 	in_resource=""
 	case "X${resource}" in
@@ -827,7 +861,7 @@ main() {
 		clean
 		;;
 	*)
-		help
+		help		
 		;;
 	esac
 	# 拼接成完整的命令

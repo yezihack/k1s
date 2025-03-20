@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.2.4
+
+- 新增支持小写的环境变量，如k1n=default.
+
 ## 2.2.2
 
 - 新增：ServiceMonitor （属于自定义资源列表）
