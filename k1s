@@ -4,9 +4,9 @@
 # 作者：yezi
 # github: github.com/yezihack/k1s
 # 创建时间：2022/11/24
-# 最后修改时间：2024/11/06
+# 最后修改时间：2025/06/17
 #################################
-version=2.2.4
+version=2.2.5
 ############参数###########
 # 定义一个缓存目录
 CACHEDIR=${K1S_CACHE_DIR:="$HOME/.k1s"}
@@ -77,6 +77,8 @@ action_list=(
 	"tail"
 	"tailf"
 	"like"
+	"ww"
+	"restart"
 )
 
 ############内置函数#############
@@ -185,6 +187,8 @@ help() {
 		"监听日志: 		tailf"
 		"模糊查找: 		like"		
 		"编辑 YAML: 	edit"		
+		"监听: 	        ww"		
+		"重启: 	        restart"		
 		"--------------- ↓ ☀ 实例(Example) ↓ ---------------"
 		"所有 pod 列表: 			${scriptName} po -A"
 		"查看 pod 列表: 			${scriptName} po"
@@ -298,13 +302,27 @@ IsYesNo() {
 	done
 }
 
+# 缓存资源
+func_cache_resource() {
+	local cache_file=$1
+    $k get po -A|tail -n +2|awk '{print $1,$2}' > "${cache_file}"
+}
+
 # 获取当前集群ID，然后缓存整个集群资源信息,5分钟更新一次
 func_cache() {
-	local cluster_id,last_update,current_time,time_diff
-	cluster_id=$( config view --minify -o jsonpath='{.clusters[0].cluster.server}'|md5sum|awk '{print $1}')
+	# local cluster_id,last_update,current_time,time_diff
+	cluster_id=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'|md5sum|awk '{print $1}')
+
+	if [ ! -d "${CACHEDIR}" ];then
+		mkdir -p "${CACHEDIR}"
+	fi
 	CACHEFILE="${CACHEDIR}/${cluster_id}.cache"
-	if [ ! -f "${CACHEFILE}" ];then
+
+	# 第一次创建缓存文件并缓存资源信息
+	if [ ! -f "${CACHEFILE}" ];then 
 		touch "${CACHEFILE}"
+		# 第1列是空间名，第2列是资源名称
+		func_cache_resource "${CACHEFILE}"
 	fi
 	
 	# 如果文件存在，则检查是否需要更新
@@ -312,14 +330,15 @@ func_cache() {
 		last_update=$(stat -c %Y "${CACHEFILE}")
 		current_time=$(date +%s)
 		time_diff=$((current_time - last_update))
-		if [ "${time_diff}" -gt 300 ];then
+		# 如果时间差大于5分钟，则更新缓存文件
+		if [ "${time_diff}" -gt 60 ];then
 			# 第1列是空间名，第2列是资源名称
-			$k get po -A|tail -n +1|awk '{print $1,$2}' > "${CACHEFILE}"
+			func_cache_resource "${CACHEFILE}"
 		fi
 	fi
 }
 
-# 根据关键字，在缓存里查找，自动搜索空间名或资源名称，第1列是空间名，第2列是资源名称
+# 根据关键字，在缓存里查找，自动搜索空间名或资源名称，第1列是空间名，第2列是资源名称，可能存在多行
 func_ai_change() {
 	local keyword=$1
 	local result
@@ -550,11 +569,22 @@ k1s_resource_action() {
 	# 扩展参数
 	param07=$6	
 	# 输出基础信息
-	yello "######## namespace:${nameSpace} # resouce-name:${resouce_name} # action:${action_name} # param_name:${param_name} ########"
+	## 实现了自动获取资源名称和命名空间	
+	is_ai=0
+	if [[ -n "$param_name" && "$param_name" != "wide" && "$param_name" != "w" && $resouce_name = "pods" ]]; then
+	    ai_result=$(func_ai_change $param_name|grep $nameSpace| head -n1|awk '{print $2}')
+		if [ -n "$ai_result" ];then
+			param_name=$ai_result
+			is_ai=1
+		fi
+	fi
+
+	yello "######## namespace:${nameSpace} # resouce-name:${resouce_name} # action:${action_name} # param_name:${param_name} # ai:$is_ai ########"
 	# 检查 Action 是否有效
 	check_action "${action_name}"
+	restart_array=("daemonsets" "deployments" "statefulsets"	"statefulsets")
 
-	# 分支判断
+	# 分支判断	
 	case "X${action_name}" in
 	"Xlist" | "Xwide" | "Xw") # 获取资源列表
 		if [ -z "${param_name}" ];then
@@ -563,8 +593,25 @@ k1s_resource_action() {
 			$k -n ${nameSpace} get "${resouce_name}" -o wide
 		elif [ "${action_name}" = "wide" ] || [ "${action_name}" = "w" ]; then
 			$k -n ${nameSpace} get "${resouce_name}" "${param_name}" -o wide
+		elif [ "${param_name}" = "ww" ]; then
+			$k -n ${nameSpace} get "${resouce_name}" -w
 		else 
 			$k -n ${nameSpace} get "${resouce_name}" "${param_name}"
+		fi
+	;;
+	"Xrestart") # 重启资源
+		# 判断资源类型
+		# 使用一个数组判断		
+		restart_exist=0
+		for elem in "${restart_array[@]}";do
+			[[ ${elem} = "${resouce_name}" ]] && restart_exist=1
+		done
+		if [ ${restart_exist} -eq 0 ];then
+			red "This【${resouce_name}】action is not support restarting"
+			# 仅支持以下 action 操作。
+			cyan "Support restart list: ${restart_array[*]}"
+		else 
+			$k -n ${nameSpace} rollout restart "${resouce_name}" "${param_name}"
 		fi
 	;;
 	"Xlike") # 模糊查找
@@ -704,6 +751,10 @@ k1s_resource_action() {
 	"Xedit") # 编辑 YAML	
 		cyan "+++++++++++++++++ 编辑 ${param_name} YAML +++++++++++++++++"
 		$k -n ${nameSpace} edit "${resouce_name}" "${param_name}"
+	;;	
+	"Xww") # 监听
+		cyan "+++++++++++++++++ 监听 ${param_name} 状态  +++++++++++++++++"
+		$k -n ${nameSpace} get "${resouce_name}" "${param_name}" -w
 	;;	
 	esac
 }
