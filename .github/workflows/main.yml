@@ -12,24 +12,47 @@ jobs:
     steps:
       # 检出代码
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 打包 k1s 和 README.md 文件
       - name: Package files
         run: |
-          mkdir release_files
+          # 创建临时目录
+          mkdir -p release_files
+          
+          # 复制文件到临时目录
           cp k1s README.md release_files/
-          tar -czvf release_files.tar.gz -C release_files .
+          
+          # 获取标签名（去掉 v 前缀）
+          TAG_NAME=${GITHUB_REF#refs/tags/v}
+          
+          # 创建以标签命名的压缩包
+          tar -czvf k1s-${TAG_NAME}.tgz -C release_files .
+          
+          # 输出文件名供后续步骤使用
+          echo "RELEASE_FILE=k1s-${TAG_NAME}.tgz" >> $GITHUB_ENV
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
 
-      # 创建 GitHub Release 并上传打包文件
+      # 创建 GitHub Release 并上传文件
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          body: "This is the release for version ${{ github.ref_name }}."
+          tag_name: v${{ env.TAG_NAME }}
+          name: Release v${{ env.TAG_NAME }}
+          body: |
+            ## k1s v${{ env.TAG_NAME }}
+            
+            这是 k1s v${{ env.TAG_NAME }} 版本的发布。
+            
+            ### 包含文件
+            - k1s 可执行文件
+            - README.md 文档
+            
+            ### 下载
+            请下载 `k1s-${{ env.TAG_NAME }}.tgz` 文件获取完整包。
           draft: false
           prerelease: false
-          files: release_files.tar.gz
+          files: |
+            k1s-${{ env.TAG_NAME }}.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

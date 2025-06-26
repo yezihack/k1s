@@ -9,7 +9,7 @@
  ( k | 1 | s )
   \_/ \_/ \_/
         by 百里(github.com/yezihack/k1s)
- version: 2.2.1
+ version: 2.2.6
 ```
 
 [![asciicast](https://asciinema.org/a/541172.svg)](https://asciinema.org/a/541172)

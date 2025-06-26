@@ -1,0 +1,35 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*' # 监听以 "v" 开头的标签
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 打包 k1s 和 README.md 文件
+      - name: Package files
+        run: |
+          mkdir release_files
+          cp k1s README.md release_files/
+          tar -czvf release_files.tar.gz -C release_files .
+
+      # 创建 GitHub Release 并上传打包文件
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: "This is the release for version ${{ github.ref_name }}."
+          draft: false
+          prerelease: false
+          files: release_files.tar.gz
