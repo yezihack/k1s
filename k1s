@@ -6,10 +6,10 @@
 # 创建时间：2022/11/24
 # 最后修改时间：2025/06/17
 #################################
-version=2.2.5
+version=2.2.6
 ############参数###########
 # 定义一个缓存目录
-CACHEDIR=${K1S_CACHE_DIR:="$HOME/.k1s"}
+CACHEDIR="/var/log/k1s"
 CACHEFILE=""
 # 资源名称
 resource=$1
@@ -30,19 +30,17 @@ param03=$5
 param04=$6
 
 # 命名空间
-nameSpace=${K1S_NS:="default"}
-[ -n "${K1N}" ] || [ -n "${k1n}" ] && nameSpace="${K1N}"
+nameSpace=${K1S_NS:=${K1N:=${k1n:="default"}}}
 
 #####################################
 # 镜像名称
-base_image=${K1S_IMAGE:="alpine:latest"}
-[ -n "${K1I}" ] || [ -n "${k1i}" ] && base_image="${K1I}"
+baseImage=${K1S_IMAGE:=${K1I:=${k1i:="alpine:latest"}}}
 
 # 存储yaml路径
-savePath=${K1S_PATH:=$PWD}
+savePath=${K1S_PATH:=${K1P:=${k1p:="$PWD"}}}
 # 判断是否以 / 结尾，自动补全
 [[ ${savePath: -1} != "/" ]] && savePath="${savePath}/"
-[ -n "${K1P}" ] || [ -n "${k1p}" ] && savePath="${K1P}"
+
 
 # kubectl 
 k=kubectl
@@ -206,6 +204,7 @@ help() {
 		"删除 pod:				${scriptName} po kube-pod-xxx del"
 		"强制删除 pod:			${scriptName} po kube-pod-xxx rm"
 		"调试 node:				${scriptName} x node-xxx"
+		"更新cache:				${scriptName} cache"
 		"--------------- ↓ ❤ 帮助(Help) ↓ ---------------"
 		"查看帮助：         ${scriptName} help|h"
 	)
@@ -213,12 +212,11 @@ help() {
 		"1. 设置YAML路径的环境变量方式: export K1P=/home/ or export k1p=/home/, 默认为 当前目录"
 		"2. 设置命名空间的环境变量方式: export K1N=default or export k1n=default, 默认为 default"
 		"3. 设置基础镜像: export K1I=alpine:latest or export k1i=alpine:latest, 默认为 alpine:latest"
-		"4. 设置缓存目录: export K1S_CACHE_DIR=\"$HOME/.k1s\" or export k1s_cache_dir=\"$HOME/.k1s\", 默认为 $HOME/.k1s"
 	)
-	local envs=(
+	local envs_list=(
 		"1. 当前操作的路径：${savePath}"
 		"2. 当前操作的空间名：${nameSpace}"
-		"3. 当前基础镜像：${base_image}"
+		"3. 当前基础镜像：${baseImage}"
 	)
 	cat <<EOF
    _   _   _  
@@ -251,8 +249,8 @@ EOF
 		green "${name}"
 	done
 	echo "CURRENT:"
-	for name in "${envs[@]}"; do
-		yello "${name}"
+	for envstr in "${envs_list[@]}"; do
+		yello "${envstr}"
 	done
 }
 
@@ -261,7 +259,7 @@ tip() {
 		"1. 当前操作的路径：${savePath}"
 		"2. 当前操作的空间名：${nameSpace}"
 	)
-	for name in "${set_env[@]}"; do
+	for name in "${envs[@]}"; do
 		green "${name}"
 	done
 }
@@ -311,6 +309,11 @@ func_cache_resource() {
 
 # 获取当前集群ID，然后缓存整个集群资源信息,5分钟更新一次
 func_cache() {
+	is_update=${1:-0}
+
+	if ! kubectl config view >/dev/null 2>&1;then
+		return
+	fi
 	# local cluster_id,last_update,current_time,time_diff
 	cluster_id=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'|md5sum|awk '{print $1}')
 
@@ -336,7 +339,11 @@ func_cache() {
 			# 第1列是空间名，第2列是资源名称
 			func_cache_resource "${CACHEFILE}"
 		fi
+		if [ "$is_update" -eq 1 ];then
+			func_cache_resource "${CACHEFILE}"
+		fi
 	fi
+
 }
 
 # 根据关键字，在缓存里查找，自动搜索空间名或资源名称，第1列是空间名，第2列是资源名称，可能存在多行
@@ -373,7 +380,7 @@ execTemporaryPod() {
         "securityContext": {
           "privileged": true
         },
-        "image": "${base_image}",
+        "image": "${baseImage}",
         "name": "nsenter",
         "stdin": true,
         "stdinOnce": true,
@@ -394,7 +401,7 @@ EOT
     pod="kube-nodeshell-$(uuidgen)"
     yello "Pod: ${pod}"
     green "Connecting $node ..."
-    $k run --image="${base_image}" --restart=Never --rm --overrides="$overrides" -it "${pod}"
+    $k run --image="${baseImage}" --restart=Never --rm --overrides="$overrides" -it "${pod}"
 	if [ $? -ne 0 ];then 
 		# 判断 pod 是否存在
 		if $k get pod "${pod}" >/dev/null 2>&1; then			
@@ -404,7 +411,7 @@ EOT
 			echo "${events_msg}"
 			error_msg=$(echo "$events_msg" | grep -iE 'rpc error|i/o timeout')
 			if [ -n "$error_msg" ]; then
-				yello "如果出现 pull image <${base_image}>: rpc error,说明 node:${node} 没有外网导致的"
+				yello "如果出现 pull image <${baseImage}>: rpc error,说明 node:${node} 没有外网导致的"
 				green "++++++++++++++ TIP +++++++++++++++"
 				cyan "可以设置内网镜像: export K1S_IMAGE=hub.local.io/alpine:latest"
 			fi
@@ -579,7 +586,6 @@ k1s_resource_action() {
 			is_ai=1
 		fi
 	fi
-
 	yello "######## namespace:${nameSpace} # resouce-name:${resouce_name} # action:${action_name} # param_name:${param_name} # ai:$is_ai ########"
 	# 检查 Action 是否有效
 	check_action "${action_name}"
@@ -911,6 +917,11 @@ main() {
 		;;
 	"Xclean" | "Xc")
 		clean
+		;;
+	"Xcache")
+		func_cache 1
+		echo "cache updated"
+		exit 0
 		;;
 	*)
 		help		
